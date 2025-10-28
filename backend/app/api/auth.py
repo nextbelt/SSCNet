@@ -140,7 +140,7 @@ async def register(
     )
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=RegistrationResponse)
 async def login(
     credentials: UserLogin,
     request: Request,
@@ -257,10 +257,26 @@ async def login(
     access_token = create_access_token(subject=user.id)
     refresh_token = create_refresh_token(subject=user.id)
     
-    return Token(
+    # Get POC to retrieve user_type
+    poc = db.query(POC).filter(POC.user_id == user.id).first()
+    user_type = "buyer"  # Default
+    if poc:
+        # Determine user_type from POC role
+        user_type = "buyer" if "procurement" in poc.role.lower() else "supplier"
+    
+    return RegistrationResponse(
         access_token=access_token,
         refresh_token=refresh_token,
-        token_type="bearer"
+        token_type="bearer",
+        user={
+            "id": str(user.id),
+            "email": user.email,
+            "name": user.name,
+            "user_type": user_type,
+            "is_verified": user.is_verified,
+            "verification_status": user.verification_status,
+            "created_at": user.created_at.isoformat()
+        }
     )
 
 
