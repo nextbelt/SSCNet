@@ -33,26 +33,6 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 security = HTTPBearer()
 
 
-# Explicit OPTIONS handler for CORS preflight
-@router.options("/register")
-@router.options("/login")
-@router.options("/refresh")
-async def auth_options(request: Request):
-    """Handle CORS preflight for auth endpoints"""
-    from fastapi.responses import JSONResponse
-    return JSONResponse(
-        content={},
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": request.headers.get("origin", "*"),
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Max-Age": "600",
-        }
-    )
-
-
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
 async def register(
     registration: UserRegistration,

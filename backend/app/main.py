@@ -165,21 +165,6 @@ async def health_check(request: Request):
     }
 
 
-# OPTIONS for health check
-@app.options("/health")
-async def health_options(request: Request):
-    """OPTIONS handler for health check"""
-    return JSONResponse(
-        content={},
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-        }
-    )
-
-
 # CORS test endpoint
 @app.get("/cors-test")
 async def cors_test(request: Request):
