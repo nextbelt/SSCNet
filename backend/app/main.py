@@ -134,10 +134,11 @@ cors_origins = list(set(cors_origins))
 # Log CORS origins for debugging
 logger.info(f"CORS origins configured: {cors_origins}")
 
+# Temporarily use wildcard for debugging - CHANGE THIS BACK FOR PRODUCTION
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_credentials=True,
+    allow_origins=["*"],  # Temporary: allow all origins
+    allow_credentials=False,  # Must be False with wildcard origins
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
     expose_headers=["*"]
