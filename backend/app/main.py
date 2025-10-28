@@ -80,23 +80,39 @@ app = FastAPI(
 )
 
 # =============================================================================
-# MIDDLEWARE - ORDER MATTERS! CORS must be first
+# MIDDLEWARE - ORDER MATTERS! Custom CORS must be first
 # =============================================================================
 
-# 1. CORS middleware - MUST BE FIRST
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://loyal-inspiration-production.up.railway.app",
-        "http://localhost:3000",
-        "http://localhost:3001"
-    ],
-    allow_credentials=True,  # Allow credentials with specific origins
-    allow_methods=["*"],  # Allow all methods
-    allow_headers=["*"],  # Allow all headers
-    expose_headers=["*"],
-    max_age=600  # Cache preflight for 10 minutes
-)
+# 1. CUSTOM CORS MIDDLEWARE - Handle OPTIONS before anything else
+@app.middleware("http")
+async def cors_middleware(request: Request, call_next):
+    """Custom CORS middleware to handle Railway proxy issues"""
+    origin = request.headers.get("origin", "")
+    
+    # Handle OPTIONS preflight
+    if request.method == "OPTIONS":
+        return JSONResponse(
+            content={},
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": origin or "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin",
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Max-Age": "600",
+            }
+        )
+    
+    # Process actual request
+    response = await call_next(request)
+    
+    # Add CORS headers to response
+    response.headers["Access-Control-Allow-Origin"] = origin or "*"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin"
+    
+    return response
 
 # 2. Security headers (SOC 2 Compliance) - TEMPORARILY DISABLED FOR DEBUGGING
 # app.add_middleware(SecurityHeadersMiddleware)
