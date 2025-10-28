@@ -30,22 +30,22 @@ class Settings(BaseSettings):
     sendgrid_api_key: str = "placeholder-sendgrid-key"
     from_email: str = "noreply@example.com"
     
-    # AWS S3
-    aws_access_key_id: str
-    aws_secret_access_key: str
-    s3_bucket_name: str
+    # AWS S3 (Optional)
+    aws_access_key_id: str = "placeholder-aws-key"
+    aws_secret_access_key: str = "placeholder-aws-secret" 
+    s3_bucket_name: str = "placeholder-bucket"
     aws_region: str = "us-east-1"
     
-    # Redis
+    # Redis (Optional)
     redis_url: str = "redis://localhost:6379/0"
     
-    # Elasticsearch
+    # Elasticsearch (Optional)
     elasticsearch_url: str = "http://localhost:9200"
     
-    # Pusher
-    pusher_app_id: str
-    pusher_key: str
-    pusher_secret: str
+    # Pusher (Optional)
+    pusher_app_id: str = "placeholder-pusher-app-id"
+    pusher_key: str = "placeholder-pusher-key"
+    pusher_secret: str = "placeholder-pusher-secret"
     pusher_cluster: str = "us2"
     
     # Third-party APIs
