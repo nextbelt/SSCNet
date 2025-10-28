@@ -179,6 +179,21 @@ async def root(request: Request):
     }
 
 
+# Global OPTIONS handler for all routes
+@app.options("/{path:path}")
+async def options_handler(request: Request):
+    """Handle OPTIONS requests for CORS preflight"""
+    return JSONResponse(
+        content={},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Max-Age": "600",
+        }
+    )
+
+
 # Include API routers
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
