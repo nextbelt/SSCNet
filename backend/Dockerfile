@@ -1,5 +1,6 @@
 FROM python:3.11-slim
 
+# Force rebuild - updated 2025-10-28
 # Set working directory
 WORKDIR /app
 
