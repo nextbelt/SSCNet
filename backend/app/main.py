@@ -134,15 +134,39 @@ cors_origins = list(set(cors_origins))
 # Log CORS origins for debugging
 logger.info(f"CORS origins configured: {cors_origins}")
 
-# Temporarily use wildcard for debugging - CHANGE THIS BACK FOR PRODUCTION
+# CORS middleware - CRITICAL: Must be added BEFORE other middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Temporary: allow all origins
+    allow_origins=["*"],  # Temporary: allow all origins for debugging
     allow_credentials=False,  # Must be False with wildcard origins
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
-    expose_headers=["*"]
+    expose_headers=["*"],
+    max_age=600  # Cache preflight for 10 minutes
 )
+
+# Additional manual CORS headers for OPTIONS requests
+@app.middleware("http")
+async def add_cors_headers(request: Request, call_next):
+    """
+    Manually add CORS headers to all responses including OPTIONS
+    """
+    if request.method == "OPTIONS":
+        return JSONResponse(
+            content={},
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Max-Age": "600",
+            }
+        )
+    
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 # Trusted host middleware (security)
 if not settings.debug:
