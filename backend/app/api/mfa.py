@@ -30,11 +30,11 @@ class MFADisableRequest(BaseModel):
     password: str
 
 
-@router.post("/setup", response_model=MFASetupResponse)
+@router.post("/setup")
 async def setup_mfa(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
-):
+) -> dict:
     """
     Initialize MFA setup - returns QR code and backup codes
     SOC 2 Compliance - Critical Security Control
