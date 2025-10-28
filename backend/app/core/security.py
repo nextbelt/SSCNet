@@ -4,6 +4,8 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import re
 
 from app.core.config import settings
@@ -11,6 +13,7 @@ from app.models.user import User
 from app.schemas.token import TokenPayload
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+security = HTTPBearer()
 
 
 def validate_password_strength(password: str) -> tuple[bool, Optional[str]]:
@@ -134,13 +137,37 @@ def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
     return user
 
 
-def get_current_user(db: Session, token: str) -> Optional[User]:
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(lambda: __import__('app.core.database', fromlist=['get_db']).get_db())
+) -> User:
     """
     Get current user from JWT token
+    FastAPI dependency for authentication
     """
+    token = credentials.credentials
     token_data = verify_token(token)
+    
     if token_data is None:
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
     user = db.query(User).filter(User.id == token_data.sub).first()
+    
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inactive user"
+        )
+    
     return user
