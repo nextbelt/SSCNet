@@ -24,7 +24,9 @@ from app.schemas.auth import (
     LinkedInAuthResponse, 
     LinkedInCallback, 
     UserResponse,
-    EmailVerification
+    EmailVerification,
+    UserRegistration,
+    UserLogin
 )
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -33,24 +35,20 @@ security = HTTPBearer()
 
 @router.post("/register", response_model=Token)
 async def register(
+    registration: UserRegistration,
     request: Request,
-    name: str,
-    email: str,
-    password: str,
-    company_name: str,
-    role: str = "buyer",
     db: Session = Depends(get_db)
 ):
     """
     Register a new user with email and password
     """
     # Sanitize inputs
-    sanitized = sanitize_user_data({"name": name, "email": email})
-    name = sanitized.get("name", name)
-    email = sanitized.get("email", email).lower().strip()
+    sanitized = sanitize_user_data({"name": registration.full_name, "email": registration.email})
+    name = sanitized.get("name", registration.full_name)
+    email = sanitized.get("email", registration.email).lower().strip()
     
     # Validate password strength
-    is_valid, error_message = validate_password_strength(password)
+    is_valid, error_message = validate_password_strength(registration.password)
     if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -69,8 +67,8 @@ async def register(
     user = User(
         email=email,
         name=name,
-        hashed_password=get_password_hash(password),
-        role=role,
+        hashed_password=get_password_hash(registration.password),
+        role=registration.user_type,
         is_active=True,
         is_verified=False,  # Email verification pending
         verification_status="pending",
@@ -81,9 +79,9 @@ async def register(
     db.flush()  # Get user ID
     
     # Create company if provided
-    if company_name and company_name.strip():
+    if registration.company_name and registration.company_name.strip():
         company = Company(
-            name=company_name.strip(),
+            name=registration.company_name.strip(),
             is_verified=False,
             verification_source="self_registration",
             created_at=datetime.utcnow()
@@ -114,7 +112,7 @@ async def register(
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
         status_code=201,
-        details={"email": email, "role": role, "has_company": bool(company_name)}
+        details={"email": email, "user_type": registration.user_type, "has_company": bool(registration.company_name)}
     )
     
     # Generate tokens
@@ -130,15 +128,14 @@ async def register(
 
 @router.post("/login", response_model=Token)
 async def login(
+    credentials: UserLogin,
     request: Request,
-    email: str,
-    password: str,
     db: Session = Depends(get_db)
 ):
     """
     Login with email and password
     """
-    email = email.lower().strip()
+    email = credentials.email.lower().strip()
     
     # Find user
     user = db.query(User).filter(User.email == email).first()
@@ -170,7 +167,7 @@ async def login(
         )
     
     # Verify password
-    if not verify_password(password, user.hashed_password):
+    if not verify_password(credentials.password, user.hashed_password):
         # Increment failed attempts
         user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
         

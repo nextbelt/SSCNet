@@ -183,18 +183,18 @@ async def root(request: Request):
 
 
 # Include API routers
-app.include_router(health.router, prefix="/api")
-app.include_router(auth.router, prefix="/api")
-app.include_router(mfa.router, prefix="/api")
-app.include_router(rfq.router, prefix="/api")
-app.include_router(data_management.router, prefix="/api")
+app.include_router(health.router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(mfa.router, prefix="/api/v1")
+app.include_router(rfq.router, prefix="/api/v1")
+app.include_router(data_management.router, prefix="/api/v1")
 
 
 # Additional API routes would be included here:
-# app.include_router(companies.router, prefix="/api")
-# app.include_router(search.router, prefix="/api")
-# app.include_router(messages.router, prefix="/api")
-# app.include_router(analytics.router, prefix="/api")
+# app.include_router(companies.router, prefix="/api/v1")
+# app.include_router(search.router, prefix="/api/v1")
+# app.include_router(messages.router, prefix="/api/v1")
+# app.include_router(analytics.router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn

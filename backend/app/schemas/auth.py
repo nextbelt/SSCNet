@@ -32,6 +32,19 @@ class EmailVerification(BaseModel):
     email: EmailStr
 
 
+class UserRegistration(BaseModel):
+    email: EmailStr
+    password: str
+    full_name: str
+    company_name: str
+    user_type: str = "buyer"
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
 class UserCreate(BaseModel):
     email: EmailStr
     name: str
