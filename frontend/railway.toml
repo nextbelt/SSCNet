@@ -14,5 +14,5 @@ command = "npm start"
 # Environment variables
 [env]
 NEXT_PUBLIC_API_URL = { required = true }
-NEXT_PUBLIC_LINKEDIN_CLIENT_ID = { required = true }
+NEXT_PUBLIC_LINKEDIN_CLIENT_ID = { default = "placeholder_linkedin_client_id" }
 NODE_ENV = "production"

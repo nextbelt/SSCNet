@@ -13,6 +13,7 @@ from app.core.security import (
     get_current_user
 )
 from app.services.linkedin import linkedin_service
+from app.services.audit_service import audit_service
 from app.models.user import User, Company, POC
 from app.schemas.token import Token, TokenRefresh
 from app.schemas.auth import (
