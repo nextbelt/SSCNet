@@ -79,62 +79,11 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add middleware
-# Security headers (SOC 2 Compliance)
-app.add_middleware(SecurityHeadersMiddleware)
+# =============================================================================
+# MIDDLEWARE - ORDER MATTERS! CORS must be first
+# =============================================================================
 
-# Simple rate limiting middleware
-@app.middleware("http")
-async def rate_limit_middleware(request: Request, call_next):
-    if not simple_rate_limit(request):
-        return JSONResponse(
-            status_code=429,
-            content={"detail": "Too many requests"}
-        )
-    response = await call_next(request)
-    return response
-
-# Additional CORS headers middleware (backup)
-@app.middleware("http")
-async def add_cors_headers(request: Request, call_next):
-    response = await call_next(request)
-    origin = request.headers.get("origin")
-    
-    # Allowed origins
-    allowed = [
-        "https://loyal-inspiration-production.up.railway.app",
-        "http://localhost:3000",
-        "http://localhost:3001"
-    ]
-    
-    if origin in allowed:
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        response.headers["Access-Control-Expose-Headers"] = "*"
-    
-    return response
-
-# CORS middleware - SOC 2 Compliant with specific origins
-# Allow both production frontend and localhost for development
-cors_origins = [
-    "https://loyal-inspiration-production.up.railway.app",
-    "http://localhost:3000",
-    "http://localhost:3001"
-]
-
-# Add any additional origins from settings
-if settings.allowed_origins:
-    cors_origins.extend(settings.allowed_origins)
-
-# Remove duplicates
-cors_origins = list(set(cors_origins))
-
-# Log CORS origins for debugging
-logger.info(f"CORS origins configured: {cors_origins}")
-
-# CORS middleware - CRITICAL: Must be added BEFORE other middleware
+# 1. CORS middleware - MUST BE FIRST
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Temporary: allow all origins for debugging
@@ -145,27 +94,18 @@ app.add_middleware(
     max_age=600  # Cache preflight for 10 minutes
 )
 
-# Additional manual CORS headers for OPTIONS requests
+# 2. Security headers (SOC 2 Compliance)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 3. Rate limiting middleware
 @app.middleware("http")
-async def add_cors_headers(request: Request, call_next):
-    """
-    Manually add CORS headers to all responses including OPTIONS
-    """
-    if request.method == "OPTIONS":
+async def rate_limit_middleware(request: Request, call_next):
+    if not simple_rate_limit(request):
         return JSONResponse(
-            content={},
-            headers={
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-                "Access-Control-Allow-Headers": "*",
-                "Access-Control-Max-Age": "600",
-            }
+            status_code=429,
+            content={"detail": "Too many requests"}
         )
-    
     response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-    response.headers["Access-Control-Allow-Headers"] = "*"
     return response
 
 # Trusted host middleware (security)
