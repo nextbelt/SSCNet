@@ -104,12 +104,21 @@ app.add_middleware(
 # 3. Rate limiting middleware
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
+    # Log all requests for debugging
+    logger.info(f"Incoming request: {request.method} {request.url.path} from {request.client.host}")
+    logger.info(f"Request headers: {dict(request.headers)}")
+    
     if not simple_rate_limit(request):
         return JSONResponse(
             status_code=429,
             content={"detail": "Too many requests"}
         )
     response = await call_next(request)
+    
+    # Log response headers
+    logger.info(f"Response status: {response.status_code}")
+    logger.info(f"Response headers: {dict(response.headers)}")
+    
     return response
 
 # Trusted host middleware (security)
@@ -183,23 +192,23 @@ async def root(request: Request):
     }
 
 
-# Global OPTIONS handler for all routes
-@app.options("/{path:path}")
-async def options_handler(request: Request):
-    """Handle OPTIONS requests for CORS preflight"""
-    origin = request.headers.get("origin", "*")
-    return JSONResponse(
-        content={},
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": origin,
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Max-Age": "600",
-            "Content-Length": "0",
-        }
-    )
+# Global OPTIONS handler for all routes - DISABLED, let CORS middleware handle it
+# @app.options("/{path:path}")
+# async def options_handler(request: Request):
+#     """Handle OPTIONS requests for CORS preflight"""
+#     origin = request.headers.get("origin", "*")
+#     return JSONResponse(
+#         content={},
+#         status_code=200,
+#         headers={
+#             "Access-Control-Allow-Origin": origin,
+#             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+#             "Access-Control-Allow-Headers": "*",
+#             "Access-Control-Allow-Credentials": "true",
+#             "Access-Control-Max-Age": "600",
+#             "Content-Length": "0",
+#         }
+#     )
 
 
 # Include API routers
