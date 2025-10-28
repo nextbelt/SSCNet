@@ -1,0 +1,18 @@
+# Railway deployment configuration for Next.js frontend
+
+# Node.js runtime
+runtime = "nodejs-18"
+
+# Build command
+[build]
+command = "npm ci && npm run build"
+
+# Start command
+[deploy] 
+command = "npm start"
+
+# Environment variables
+[env]
+NEXT_PUBLIC_API_URL = { required = true }
+NEXT_PUBLIC_LINKEDIN_CLIENT_ID = { required = true }
+NODE_ENV = "production"

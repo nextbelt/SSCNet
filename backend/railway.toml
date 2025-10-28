@@ -1,0 +1,24 @@
+# Railway deployment configuration for FastAPI backend
+
+# Python runtime
+runtime = "python-3.11"
+
+# Build command
+[build]
+command = "pip install -r requirements.txt"
+
+# Start command  
+[deploy]
+command = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+
+# Environment variables needed
+[env]
+DATABASE_URL = { required = true }
+SECRET_KEY = { required = true }
+LINKEDIN_CLIENT_ID = { required = true }
+LINKEDIN_CLIENT_SECRET = { required = true }
+AWS_ACCESS_KEY_ID = { required = true }
+AWS_SECRET_ACCESS_KEY = { required = true }
+AWS_BUCKET_NAME = { required = true }
+SENDGRID_API_KEY = { required = true }
+FRONTEND_URL = { required = true }
