@@ -83,6 +83,12 @@ app = FastAPI(
 # MIDDLEWARE - ORDER MATTERS! CORS must be first
 # =============================================================================
 
+# Healthcheck endpoint BEFORE middleware - Railway needs this
+@app.get("/healthz", include_in_schema=False)
+async def healthz():
+    """Simple health check for Railway - no middleware"""
+    return {"status": "ok"}
+
 # 1. CORS middleware - MUST BE FIRST
 app.add_middleware(
     CORSMiddleware,
