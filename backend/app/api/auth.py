@@ -68,7 +68,6 @@ async def register(
         email=email,
         name=name,
         hashed_password=get_password_hash(registration.password),
-        role=registration.user_type,
         is_active=True,
         is_verified=False,  # Email verification pending
         verification_status="pending",
@@ -90,10 +89,11 @@ async def register(
         db.flush()
         
         # Create POC relationship
+        poc_role = "Procurement Officer" if registration.user_type == "buyer" else "Sales Manager"
         poc = POC(
             user_id=user.id,
             company_id=company.id,
-            role="Primary Contact",
+            role=poc_role,
             is_primary=True,
             availability_status="available"
         )
