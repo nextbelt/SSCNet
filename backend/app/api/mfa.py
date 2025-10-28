@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -12,6 +12,8 @@ router = APIRouter(prefix="/mfa", tags=["mfa"])
 
 
 class MFASetupResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     secret: str
     qr_code: str
     backup_codes: list[str]
