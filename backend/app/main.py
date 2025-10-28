@@ -80,39 +80,19 @@ app = FastAPI(
 )
 
 # =============================================================================
-# MIDDLEWARE - ORDER MATTERS! Custom CORS must be first
+# MIDDLEWARE - ORDER MATTERS! CORS must be first
 # =============================================================================
 
-# 1. CUSTOM CORS MIDDLEWARE - Handle OPTIONS before anything else
-@app.middleware("http")
-async def cors_middleware(request: Request, call_next):
-    """Custom CORS middleware to handle Railway proxy issues"""
-    origin = request.headers.get("origin", "")
-    
-    # Handle OPTIONS preflight
-    if request.method == "OPTIONS":
-        return JSONResponse(
-            content={},
-            status_code=200,
-            headers={
-                "Access-Control-Allow-Origin": origin or "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin",
-                "Access-Control-Allow-Credentials": "true",
-                "Access-Control-Max-Age": "600",
-            }
-        )
-    
-    # Process actual request
-    response = await call_next(request)
-    
-    # Add CORS headers to response
-    response.headers["Access-Control-Allow-Origin"] = origin or "*"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin"
-    
-    return response
+# 1. CORS middleware - MUST BE FIRST
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins temporarily
+    allow_credentials=False,  # Must be False with wildcard
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=600
+)
 
 # 2. Security headers (SOC 2 Compliance) - TEMPORARILY DISABLED FOR DEBUGGING
 # app.add_middleware(SecurityHeadersMiddleware)
@@ -120,21 +100,12 @@ async def cors_middleware(request: Request, call_next):
 # 3. Rate limiting middleware
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
-    # Log all requests for debugging
-    logger.info(f"Incoming request: {request.method} {request.url.path} from {request.client.host}")
-    logger.info(f"Request headers: {dict(request.headers)}")
-    
     if not simple_rate_limit(request):
         return JSONResponse(
             status_code=429,
             content={"detail": "Too many requests"}
         )
     response = await call_next(request)
-    
-    # Log response headers
-    logger.info(f"Response status: {response.status_code}")
-    logger.info(f"Response headers: {dict(response.headers)}")
-    
     return response
 
 # Trusted host middleware (security)
