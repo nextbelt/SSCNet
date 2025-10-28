@@ -17,7 +17,7 @@ from app.core.security import (
 )
 from app.core.sanitizer import sanitize_user_data
 from app.services.linkedin import linkedin_service
-from app.services.audit_service import audit_service, log_audit_event
+from app.services.audit_service import audit_service
 from app.models.user import User, Company, POC
 from app.schemas.token import Token, TokenRefresh
 from app.schemas.auth import (
@@ -103,10 +103,11 @@ async def register(
     db.refresh(user)
     
     # Audit log
-    log_audit_event(
+    audit_service.log_action(
         db=db,
         user_id=user.id,
         action="user.register",
+        status="success",
         resource_type="user",
         resource_id=str(user.id),
         ip_address=request.client.host if request.client else None,
@@ -142,10 +143,11 @@ async def login(
     
     if not user:
         # Audit failed attempt
-        log_audit_event(
+        audit_service.log_action(
             db=db,
             user_id=None,
             action="user.login.failed",
+            status="failure",
             resource_type="user",
             resource_id=email,
             ip_address=request.client.host if request.client else None,
@@ -178,10 +180,11 @@ async def login(
             db.commit()
             
             # Audit lockout
-            log_audit_event(
+            audit_service.log_action(
                 db=db,
                 user_id=user.id,
                 action="user.account.locked",
+                status="failure",
                 resource_type="user",
                 resource_id=str(user.id),
                 ip_address=request.client.host if request.client else None,
@@ -198,10 +201,11 @@ async def login(
         db.commit()
         
         # Audit failed attempt
-        log_audit_event(
+        audit_service.log_action(
             db=db,
             user_id=user.id,
             action="user.login.failed",
+            status="failure",
             resource_type="user",
             resource_id=str(user.id),
             ip_address=request.client.host if request.client else None,
@@ -223,10 +227,11 @@ async def login(
     db.commit()
     
     # Audit successful login
-    log_audit_event(
+    audit_service.log_action(
         db=db,
         user_id=user.id,
         action="user.login.success",
+        status="success",
         resource_type="user",
         resource_id=str(user.id),
         ip_address=request.client.host if request.client else None,
