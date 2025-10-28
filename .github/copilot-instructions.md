@@ -38,5 +38,14 @@ This is a comprehensive B2B supply chain sourcing platform with LinkedIn API int
 - [x] Install Required Extensions
 - [x] Compile the Project
 - [x] Create and Run Task
-- [ ] Launch the Project
+- [x] Launch the Project (Production - Railway)
+- [x] Local Development Setup
+- [ ] Build Core Dashboard Features
 - [x] Ensure Documentation is Complete
+
+## Local Development (Recommended for Development)
+- Run `start-local-dev.bat` for one-time setup
+- Run `run-local.bat` to start both backend and frontend servers
+- Backend: http://localhost:8000 (API docs at /docs)
+- Frontend: http://localhost:3000
+- See LOCAL_DEVELOPMENT_GUIDE.md for detailed instructions
