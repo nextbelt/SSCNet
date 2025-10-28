@@ -73,7 +73,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.project_name,
     version=settings.version,
-    description="A comprehensive B2B supply chain sourcing platform with LinkedIn API integration",
+    description="A comprehensive B2B supply chain sourcing platform with LinkedIn API integration and email/password authentication",
     docs_url="/docs" if settings.debug else None,
     redoc_url="/redoc" if settings.debug else None,
     lifespan=lifespan
