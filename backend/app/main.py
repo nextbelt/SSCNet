@@ -86,10 +86,14 @@ app = FastAPI(
 # 1. CORS middleware - MUST BE FIRST
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Temporary: allow all origins for debugging
-    allow_credentials=False,  # Must be False with wildcard origins
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],
+    allow_origins=[
+        "https://loyal-inspiration-production.up.railway.app",
+        "http://localhost:3000",
+        "http://localhost:3001"
+    ],
+    allow_credentials=True,  # Allow credentials with specific origins
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],  # Allow all headers
     expose_headers=["*"],
     max_age=600  # Cache preflight for 10 minutes
 )
