@@ -1,0 +1,9 @@
+# Railway configuration for SSCNet Backend Service
+[build]
+command = "cd backend && pip install -r requirements.txt"
+
+[deploy]
+command = "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+
+# Set working directory to backend
+workingDirectory = "backend"
