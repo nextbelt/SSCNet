@@ -25,6 +25,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
     verification_status = Column(String(50), default="pending")  # pending, verified, rejected
+    deletion_scheduled_at = Column(DateTime, nullable=True)  # GDPR/CCPA compliance
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
