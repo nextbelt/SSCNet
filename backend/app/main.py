@@ -98,8 +98,8 @@ app.add_middleware(
     max_age=600  # Cache preflight for 10 minutes
 )
 
-# 2. Security headers (SOC 2 Compliance)
-app.add_middleware(SecurityHeadersMiddleware)
+# 2. Security headers (SOC 2 Compliance) - TEMPORARILY DISABLED FOR DEBUGGING
+# app.add_middleware(SecurityHeadersMiddleware)
 
 # 3. Rate limiting middleware
 @app.middleware("http")
@@ -187,13 +187,17 @@ async def root(request: Request):
 @app.options("/{path:path}")
 async def options_handler(request: Request):
     """Handle OPTIONS requests for CORS preflight"""
+    origin = request.headers.get("origin", "*")
     return JSONResponse(
         content={},
+        status_code=200,
         headers={
-            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Origin": origin,
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
             "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "true",
             "Access-Control-Max-Age": "600",
+            "Content-Length": "0",
         }
     )
 
