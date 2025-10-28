@@ -3,6 +3,7 @@ import type { AppProps } from 'next/app'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { Toaster } from 'react-hot-toast'
 import { useState } from 'react'
+import CookieConsent from '../components/CookieConsent'
 
 function MyApp({ Component, pageProps }: AppProps) {
   const [queryClient] = useState(() => new QueryClient({
@@ -29,6 +30,7 @@ function MyApp({ Component, pageProps }: AppProps) {
           },
         }}
       />
+      <CookieConsent />
     </QueryClientProvider>
   )
 }

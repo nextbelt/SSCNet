@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     # Application
     project_name: str = "Sourcing Supply Chain Net"
     version: str = "1.0.0"
+    app_version: str = "1.0.0"  # Alias for Sentry
     debug: bool = False
     environment: str = "production"
     log_level: str = "INFO"
@@ -55,6 +56,29 @@ class Settings(BaseSettings):
     
     # Monitoring
     sentry_dsn: Optional[str] = None
+    
+    @property
+    def SENTRY_DSN(self) -> Optional[str]:
+        """Uppercase alias for Sentry configuration"""
+        return self.sentry_dsn
+    
+    @property
+    def ENVIRONMENT(self) -> str:
+        """Uppercase alias for environment"""
+        return self.environment
+    
+    @property
+    def APP_VERSION(self) -> str:
+        """Uppercase alias for app version"""
+        return self.app_version
+    
+    # SOC 2 Compliance
+    max_login_attempts: int = 5
+    account_lockout_duration_minutes: int = 15
+    mfa_required_for_admin: bool = True
+    password_min_length: int = 12
+    session_timeout_minutes: int = 30
+    session_absolute_timeout_hours: int = 24
     
     # CORS
     allowed_origins: List[str] = []

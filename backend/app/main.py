@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.core.database import create_tables
+from app.core.sentry_config import init_sentry
 from app.api import auth, rfq, mfa
 from app.api import health, data_management
 from app.services.linkedin import linkedin_service
@@ -54,6 +55,11 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     logger.info("Starting Sourcing Supply Chain Net API")
+    
+    # Initialize Sentry for error tracking
+    init_sentry()
+    
+    # Create database tables
     create_tables()
     logger.info("Database tables created/verified")
     
