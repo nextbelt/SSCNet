@@ -33,7 +33,7 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 security = HTTPBearer()
 
 
-@router.post("/register", response_model=Token)
+@router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
 async def register(
     registration: UserRegistration,
     request: Request,

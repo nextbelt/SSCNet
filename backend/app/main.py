@@ -96,11 +96,18 @@ async def rate_limit_middleware(request: Request, call_next):
 
 # CORS middleware - SOC 2 Compliant with specific origins
 # Allow both production frontend and localhost for development
-cors_origins = settings.allowed_origins if settings.allowed_origins else [
+cors_origins = [
     "https://loyal-inspiration-production.up.railway.app",
     "http://localhost:3000",
     "http://localhost:3001"
 ]
+
+# Add any additional origins from settings
+if settings.allowed_origins:
+    cors_origins.extend(settings.allowed_origins)
+
+# Remove duplicates
+cors_origins = list(set(cors_origins))
 
 app.add_middleware(
     CORSMiddleware,
