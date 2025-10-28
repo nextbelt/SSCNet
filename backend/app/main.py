@@ -177,6 +177,26 @@ async def health_check(request: Request):
     }
 
 
+# CORS test endpoint
+@app.get("/cors-test")
+async def cors_test(request: Request):
+    """Test endpoint to verify CORS is working"""
+    return {
+        "message": "CORS is working!",
+        "origin": request.headers.get("origin", "no-origin"),
+        "headers": dict(request.headers)
+    }
+
+
+@app.post("/cors-test")
+async def cors_test_post(request: Request):
+    """Test POST endpoint to verify CORS is working"""
+    return {
+        "message": "POST CORS is working!",
+        "origin": request.headers.get("origin", "no-origin")
+    }
+
+
 # API status endpoint
 @app.get("/")
 async def root(request: Request):
