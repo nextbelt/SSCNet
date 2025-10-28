@@ -38,9 +38,13 @@ Set these in Railway dashboard under **Variables**:
 **Required for MVP:**
 ```
 SECRET_KEY=your-super-secret-jwt-key-make-it-long-and-random
-LINKEDIN_CLIENT_ID=your-linkedin-app-client-id
-LINKEDIN_CLIENT_SECRET=your-linkedin-app-client-secret
 FRONTEND_URL=https://your-frontend-domain.railway.app
+```
+
+**LinkedIn (Optional - can use placeholders for testing):**
+```
+LINKEDIN_CLIENT_ID=placeholder-linkedin-client-id
+LINKEDIN_CLIENT_SECRET=placeholder-linkedin-client-secret
 ```
 
 **Railway will auto-provide:**
@@ -73,8 +77,12 @@ FROM_EMAIL=noreply@yourdomain.com
 #### 3.2 Configure Frontend Environment Variables
 ```
 NEXT_PUBLIC_API_URL=https://your-backend-domain.railway.app
-NEXT_PUBLIC_LINKEDIN_CLIENT_ID=your-linkedin-app-client-id
 NODE_ENV=production
+```
+
+**LinkedIn (Optional - can use placeholder for testing):**
+```
+NEXT_PUBLIC_LINKEDIN_CLIENT_ID=placeholder-linkedin-client-id
 ```
 
 ### 4. LinkedIn App Configuration

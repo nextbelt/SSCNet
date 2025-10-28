@@ -21,14 +21,14 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:password@localhost:5433/sourcing_supply_chain"
     database_url_test: Optional[str] = None
     
-    # LinkedIn API
-    linkedin_client_id: str
-    linkedin_client_secret: str
-    linkedin_redirect_uri: str
+    # LinkedIn API (Optional - can be placeholders)
+    linkedin_client_id: str = "placeholder-linkedin-client-id"
+    linkedin_client_secret: str = "placeholder-linkedin-client-secret"
+    linkedin_redirect_uri: str = "http://localhost:3000/auth/linkedin/callback"
     
-    # SendGrid
-    sendgrid_api_key: str
-    from_email: str
+    # SendGrid (Optional)
+    sendgrid_api_key: str = "placeholder-sendgrid-key"
+    from_email: str = "noreply@example.com"
     
     # AWS S3
     aws_access_key_id: str

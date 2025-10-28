@@ -17,11 +17,22 @@ class LinkedInService:
         self.redirect_uri = settings.linkedin_redirect_uri
         self.base_url = "https://api.linkedin.com"
         self.oauth_url = "https://www.linkedin.com/oauth/v2"
+        
+        # Check if LinkedIn is properly configured (not placeholder)
+        self.is_configured = (
+            self.client_id and 
+            self.client_secret and 
+            not self.client_id.startswith("placeholder") and
+            not self.client_secret.startswith("placeholder")
+        )
     
     def get_authorization_url(self, state: str = None) -> str:
         """
         Generate LinkedIn OAuth authorization URL
         """
+        if not self.is_configured:
+            raise ValueError("LinkedIn OAuth is not configured. Please set proper client credentials.")
+            
         params = {
             "response_type": "code",
             "client_id": self.client_id,

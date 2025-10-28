@@ -66,19 +66,28 @@ chmod +x deploy-railway.sh
 
 ### 2. Environment Variables to Set
 
-**Backend:**
+**Backend (Required):**
 ```
 SECRET_KEY=your-super-secret-jwt-key
-LINKEDIN_CLIENT_ID=your-linkedin-client-id
-LINKEDIN_CLIENT_SECRET=your-linkedin-client-secret
 FRONTEND_URL=https://your-frontend.railway.app
 DATABASE_URL=postgresql://... (Railway auto-provides)
+```
+
+**Backend (Optional - can use placeholders):**
+```
+LINKEDIN_CLIENT_ID=placeholder-linkedin-client-id
+LINKEDIN_CLIENT_SECRET=placeholder-linkedin-client-secret
 ```
 
 **Frontend:**
 ```
 NEXT_PUBLIC_API_URL=https://your-backend.railway.app
-NEXT_PUBLIC_LINKEDIN_CLIENT_ID=your-linkedin-client-id
+NODE_ENV=production
+```
+
+**Frontend (Optional):**
+```
+NEXT_PUBLIC_LINKEDIN_CLIENT_ID=placeholder-linkedin-client-id
 ```
 
 ## 🧪 Testing After Deployment
