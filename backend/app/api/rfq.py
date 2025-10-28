@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
@@ -8,7 +8,9 @@ import uuid
 
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.core.sanitizer import sanitize_rfq_data
 from app.models.user import User, RFQ, RFQResponse, Company, POC
+from app.services.audit_service import log_audit_event
 from app.schemas.rfq import (
     RFQCreate,
     RFQUpdate, 
@@ -26,6 +28,7 @@ security = HTTPBearer()
 @router.post("", response_model=RFQResponseSchema)
 async def create_rfq(
     rfq_data: RFQCreate,
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ):
@@ -52,19 +55,23 @@ async def create_rfq(
     if not expires_at:
         expires_at = datetime.utcnow() + timedelta(days=30)
     
+    # Sanitize input data to prevent XSS
+    rfq_dict = rfq_data.dict()
+    sanitized_data = sanitize_rfq_data(rfq_dict)
+    
     # Create RFQ
     rfq = RFQ(
         buyer_id=user.id,
         buyer_company_id=poc.company_id,
-        title=rfq_data.title,
-        material_category=rfq_data.material_category,
+        title=sanitized_data.get('title', rfq_data.title),
+        material_category=sanitized_data.get('material_category', rfq_data.material_category),
         quantity=rfq_data.quantity,
         target_price=rfq_data.target_price,
-        specifications=rfq_data.specifications,
+        specifications=sanitized_data.get('specifications', rfq_data.specifications),
         delivery_deadline=rfq_data.delivery_deadline,
-        delivery_location=rfq_data.delivery_location,
-        required_certifications=rfq_data.required_certifications,
-        preferred_suppliers=rfq_data.preferred_suppliers,
+        delivery_location=sanitized_data.get('delivery_location', rfq_data.delivery_location),
+        required_certifications=sanitized_data.get('required_certifications', rfq_data.required_certifications),
+        preferred_suppliers=sanitized_data.get('preferred_suppliers', rfq_data.preferred_suppliers),
         attachments=rfq_data.attachments,
         visibility=rfq_data.visibility,
         expires_at=expires_at
@@ -73,6 +80,24 @@ async def create_rfq(
     db.add(rfq)
     db.commit()
     db.refresh(rfq)
+    
+    # Audit log
+    log_audit_event(
+        db=db,
+        user_id=user.id,
+        action="rfq.create",
+        resource_type="rfq",
+        resource_id=str(rfq.id),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        status_code=200,
+        details={
+            "title": rfq.title,
+            "material_category": rfq.material_category,
+            "quantity": rfq.quantity,
+            "visibility": rfq.visibility
+        }
+    )
     
     return RFQResponseSchema(
         id=str(rfq.id),
@@ -164,6 +189,7 @@ async def list_rfqs(
 @router.get("/{rfq_id}", response_model=RFQDetail)
 async def get_rfq(
     rfq_id: str,
+    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db)
 ):
@@ -201,6 +227,20 @@ async def get_rfq(
     rfq.view_count += 1
     db.commit()
     
+    # Audit log (only if authenticated)
+    if current_user:
+        log_audit_event(
+            db=db,
+            user_id=current_user.id,
+            action="rfq.view",
+            resource_type="rfq",
+            resource_id=str(rfq.id),
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            status_code=200,
+            details={"title": rfq.title}
+        )
+    
     # Get buyer company info
     buyer_company = db.query(Company).filter(Company.id == rfq.buyer_company_id).first()
     
@@ -235,6 +275,7 @@ async def get_rfq(
 async def update_rfq(
     rfq_id: str,
     rfq_update: RFQUpdate,
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ):
@@ -270,14 +311,31 @@ async def update_rfq(
             detail="Only the RFQ owner can update it"
         )
     
-    # Update fields
+    # Track what changed
+    changes = {}
     update_data = rfq_update.dict(exclude_unset=True)
     for field, value in update_data.items():
+        old_value = getattr(rfq, field)
+        if old_value != value:
+            changes[field] = {"old": str(old_value), "new": str(value)}
         setattr(rfq, field, value)
     
     rfq.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(rfq)
+    
+    # Audit log
+    log_audit_event(
+        db=db,
+        user_id=user.id,
+        action="rfq.update",
+        resource_type="rfq",
+        resource_id=str(rfq.id),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        status_code=200,
+        details={"changes": changes}
+    )
     
     return RFQResponseSchema(
         id=str(rfq.id),
@@ -300,6 +358,7 @@ async def update_rfq(
 @router.delete("/{rfq_id}")
 async def delete_rfq(
     rfq_id: str,
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ):
@@ -335,8 +394,28 @@ async def delete_rfq(
             detail="Only the RFQ owner can delete it"
         )
     
+    # Save details before deletion
+    rfq_details = {
+        "title": rfq.title,
+        "material_category": rfq.material_category,
+        "status": rfq.status
+    }
+    
     db.delete(rfq)
     db.commit()
+    
+    # Audit log
+    log_audit_event(
+        db=db,
+        user_id=user.id,
+        action="rfq.delete",
+        resource_type="rfq",
+        resource_id=str(rfq_uuid),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        status_code=200,
+        details=rfq_details
+    )
     
     return {"message": "RFQ deleted successfully"}
 
@@ -345,6 +424,7 @@ async def delete_rfq(
 async def submit_rfq_response(
     rfq_id: str,
     response_data: RFQResponseCreate,
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ):
@@ -429,6 +509,24 @@ async def submit_rfq_response(
     
     db.commit()
     db.refresh(rfq_response)
+    
+    # Audit log
+    log_audit_event(
+        db=db,
+        user_id=user.id,
+        action="rfq.response.submit",
+        resource_type="rfq_response",
+        resource_id=str(rfq_response.id),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        status_code=200,
+        details={
+            "rfq_id": str(rfq.id),
+            "rfq_title": rfq.title,
+            "price_quote": response_data.price_quote,
+            "lead_time_days": response_data.lead_time_days
+        }
+    )
     
     return {"message": "Response submitted successfully", "response_id": str(rfq_response.id)}
 

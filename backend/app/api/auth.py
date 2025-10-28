@@ -10,7 +10,8 @@ from app.core.security import (
     create_access_token, 
     create_refresh_token, 
     verify_token,
-    get_current_user
+    get_current_user,
+    validate_password_strength
 )
 from app.services.linkedin import linkedin_service
 from app.services.audit_service import audit_service

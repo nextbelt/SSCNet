@@ -4,12 +4,66 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
+import re
 
 from app.core.config import settings
 from app.models.user import User
 from app.schemas.token import TokenPayload
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def validate_password_strength(password: str) -> tuple[bool, Optional[str]]:
+    """
+    Validate password strength according to SOC 2 requirements.
+    
+    Requirements:
+    - Minimum 12 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one number
+    - At least one special character
+    
+    Args:
+        password: Password to validate
+    
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    min_length = settings.password_min_length
+    
+    if len(password) < min_length:
+        return False, f"Password must be at least {min_length} characters long"
+    
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must contain at least one uppercase letter"
+    
+    if not re.search(r"[a-z]", password):
+        return False, "Password must contain at least one lowercase letter"
+    
+    if not re.search(r"\d", password):
+        return False, "Password must contain at least one number"
+    
+    if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", password):
+        return False, "Password must contain at least one special character (!@#$%^&* etc.)"
+    
+    # Check for common weak passwords
+    common_passwords = [
+        "password", "123456", "12345678", "qwerty", "abc123", "monkey",
+        "password123", "admin123", "letmein", "welcome", "password1",
+        "admin", "administrator", "root", "toor", "pass", "test"
+    ]
+    
+    if password.lower() in common_passwords:
+        return False, "Password is too common. Please choose a more unique password"
+    
+    # Check for sequential characters (e.g., "abcd", "1234")
+    if any(password.lower()[i:i+4] == password.lower()[i:i+4].lower() 
+           for i in range(len(password) - 3)
+           if password.lower()[i:i+4] in ["abcd", "bcde", "cdef", "1234", "2345", "3456", "4567", "5678", "6789"]):
+        return False, "Password contains sequential characters"
+    
+    return True, None
 
 
 def create_access_token(
