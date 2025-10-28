@@ -19,7 +19,7 @@ from app.core.sanitizer import sanitize_user_data
 from app.services.linkedin import linkedin_service
 from app.services.audit_service import audit_service
 from app.models.user import User, Company, POC
-from app.schemas.token import Token, TokenRefresh
+from app.schemas.token import Token, TokenRefresh, RegistrationResponse
 from app.schemas.auth import (
     LinkedInAuthResponse, 
     LinkedInCallback, 
@@ -33,7 +33,7 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 security = HTTPBearer()
 
 
-@router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=RegistrationResponse, status_code=status.HTTP_201_CREATED)
 async def register(
     registration: UserRegistration,
     request: Request,
@@ -120,10 +120,23 @@ async def register(
     access_token = create_access_token(subject=user.id)
     refresh_token = create_refresh_token(subject=user.id)
     
-    return Token(
+    # Get POC to retrieve user_type
+    poc = db.query(POC).filter(POC.user_id == user.id).first()
+    user_type = registration.user_type  # Use the registration user_type
+    
+    return RegistrationResponse(
         access_token=access_token,
         refresh_token=refresh_token,
-        token_type="bearer"
+        token_type="bearer",
+        user={
+            "id": str(user.id),
+            "email": user.email,
+            "name": user.name,
+            "user_type": user_type,
+            "is_verified": user.is_verified,
+            "verification_status": user.verification_status,
+            "created_at": user.created_at.isoformat()
+        }
     )
 
 
