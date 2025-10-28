@@ -96,7 +96,13 @@ app.add_middleware(
 if not settings.debug:
     app.add_middleware(
         TrustedHostMiddleware,
-        allowed_hosts=["*.sscn.com", "sscn.com", "localhost"]
+        allowed_hosts=[
+            "*.sscn.com", 
+            "sscn.com", 
+            "localhost",
+            "*.railway.app",
+            "*.up.railway.app"
+        ]
     )
 
 
