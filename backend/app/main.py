@@ -94,13 +94,21 @@ async def rate_limit_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
-# CORS middleware
+# CORS middleware - SOC 2 Compliant with specific origins
+# Allow both production frontend and localhost for development
+cors_origins = settings.allowed_origins if settings.allowed_origins else [
+    "https://loyal-inspiration-production.up.railway.app",
+    "http://localhost:3000",
+    "http://localhost:3001"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Trusted host middleware (security)
