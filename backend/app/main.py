@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.core.database import create_tables
-from app.api import auth, rfq
+from app.api import auth, rfq, mfa
 from app.api import health, data_management
 from app.services.linkedin import linkedin_service
 from app.middleware.security_headers import SecurityHeadersMiddleware
@@ -171,6 +171,7 @@ async def root(request: Request):
 # Include API routers
 app.include_router(health.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
+app.include_router(mfa.router, prefix="/api")
 app.include_router(rfq.router, prefix="/api")
 app.include_router(data_management.router, prefix="/api")
 

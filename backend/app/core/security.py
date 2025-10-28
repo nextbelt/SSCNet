@@ -17,14 +17,14 @@ def create_access_token(
 ) -> str:
     """
     Create a JWT access token
+    SOC 2 Compliance - 30-minute idle timeout
     """
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
-            minutes=settings.access_token_expire_minutes
-        )
-    to_encode = {"exp": expire, "sub": str(subject)}
+        # Default: 30 minutes (SOC 2 requirement)
+        expire = datetime.utcnow() + timedelta(minutes=30)
+    to_encode = {"exp": expire, "sub": str(subject), "iat": datetime.utcnow()}
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
@@ -32,9 +32,10 @@ def create_access_token(
 def create_refresh_token(subject: Union[str, Any]) -> str:
     """
     Create a JWT refresh token
+    SOC 2 Compliance - 24-hour absolute timeout
     """
-    expire = datetime.utcnow() + timedelta(days=settings.refresh_token_expire_days)
-    to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
+    expire = datetime.utcnow() + timedelta(hours=24)
+    to_encode = {"exp": expire, "sub": str(subject), "type": "refresh", "iat": datetime.utcnow()}
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 

@@ -27,6 +27,12 @@ class User(Base):
     verification_status = Column(String(50), default="pending")  # pending, verified, rejected
     deletion_scheduled_at = Column(DateTime, nullable=True)  # GDPR/CCPA compliance
     
+    # Account security (SOC 2 Compliance)
+    failed_login_attempts = Column(Integer, default=0)
+    locked_until = Column(DateTime, nullable=True)
+    last_login_at = Column(DateTime, nullable=True)
+    last_login_ip = Column(String(45), nullable=True)
+    
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
