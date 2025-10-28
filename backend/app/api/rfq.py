@@ -10,7 +10,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.core.sanitizer import sanitize_rfq_data
 from app.models.user import User, RFQ, RFQResponse, Company, POC
-from app.services.audit_service import log_audit_event
+from app.services.audit_service import audit_service
 from app.schemas.rfq import (
     RFQCreate,
     RFQUpdate, 
@@ -82,10 +82,11 @@ async def create_rfq(
     db.refresh(rfq)
     
     # Audit log
-    log_audit_event(
+    audit_service.log_action(
         db=db,
         user_id=user.id,
         action="rfq.create",
+        status="success",
         resource_type="rfq",
         resource_id=str(rfq.id),
         ip_address=request.client.host if request.client else None,
@@ -229,10 +230,11 @@ async def get_rfq(
     
     # Audit log (only if authenticated)
     if current_user:
-        log_audit_event(
+        audit_service.log_action(
             db=db,
             user_id=current_user.id,
             action="rfq.view",
+            status="success",
             resource_type="rfq",
             resource_id=str(rfq.id),
             ip_address=request.client.host if request.client else None,
@@ -325,10 +327,11 @@ async def update_rfq(
     db.refresh(rfq)
     
     # Audit log
-    log_audit_event(
+    audit_service.log_action(
         db=db,
         user_id=user.id,
         action="rfq.update",
+        status="success",
         resource_type="rfq",
         resource_id=str(rfq.id),
         ip_address=request.client.host if request.client else None,
@@ -405,10 +408,11 @@ async def delete_rfq(
     db.commit()
     
     # Audit log
-    log_audit_event(
+    audit_service.log_action(
         db=db,
         user_id=user.id,
         action="rfq.delete",
+        status="success",
         resource_type="rfq",
         resource_id=str(rfq_uuid),
         ip_address=request.client.host if request.client else None,
@@ -511,10 +515,11 @@ async def submit_rfq_response(
     db.refresh(rfq_response)
     
     # Audit log
-    log_audit_event(
+    audit_service.log_action(
         db=db,
         user_id=user.id,
         action="rfq.response.submit",
+        status="success",
         resource_type="rfq_response",
         resource_id=str(rfq_response.id),
         ip_address=request.client.host if request.client else None,
