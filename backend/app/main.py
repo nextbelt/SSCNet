@@ -89,9 +89,31 @@ async def rate_limit_middleware(request: Request, call_next):
     if not simple_rate_limit(request):
         return JSONResponse(
             status_code=429,
-            content={"detail": "Rate limit exceeded"}
+            content={"detail": "Too many requests"}
         )
     response = await call_next(request)
+    return response
+
+# Additional CORS headers middleware (backup)
+@app.middleware("http")
+async def add_cors_headers(request: Request, call_next):
+    response = await call_next(request)
+    origin = request.headers.get("origin")
+    
+    # Allowed origins
+    allowed = [
+        "https://loyal-inspiration-production.up.railway.app",
+        "http://localhost:3000",
+        "http://localhost:3001"
+    ]
+    
+    if origin in allowed:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Expose-Headers"] = "*"
+    
     return response
 
 # CORS middleware - SOC 2 Compliant with specific origins
@@ -108,6 +130,9 @@ if settings.allowed_origins:
 
 # Remove duplicates
 cors_origins = list(set(cors_origins))
+
+# Log CORS origins for debugging
+logger.info(f"CORS origins configured: {cors_origins}")
 
 app.add_middleware(
     CORSMiddleware,
