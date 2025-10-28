@@ -11,10 +11,13 @@ from app.core.security import (
     create_refresh_token, 
     verify_token,
     get_current_user,
-    validate_password_strength
+    validate_password_strength,
+    get_password_hash,
+    verify_password
 )
+from app.core.sanitizer import sanitize_user_data
 from app.services.linkedin import linkedin_service
-from app.services.audit_service import audit_service
+from app.services.audit_service import audit_service, log_audit_event
 from app.models.user import User, Company, POC
 from app.schemas.token import Token, TokenRefresh
 from app.schemas.auth import (
@@ -26,6 +29,224 @@ from app.schemas.auth import (
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 security = HTTPBearer()
+
+
+@router.post("/register", response_model=Token)
+async def register(
+    request: Request,
+    name: str,
+    email: str,
+    password: str,
+    company_name: str,
+    role: str = "buyer",
+    db: Session = Depends(get_db)
+):
+    """
+    Register a new user with email and password
+    """
+    # Sanitize inputs
+    sanitized = sanitize_user_data({"name": name, "email": email})
+    name = sanitized.get("name", name)
+    email = sanitized.get("email", email).lower().strip()
+    
+    # Validate password strength
+    is_valid, error_message = validate_password_strength(password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_message
+        )
+    
+    # Check if user already exists
+    existing_user = db.query(User).filter(User.email == email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+    
+    # Create user
+    user = User(
+        email=email,
+        name=name,
+        hashed_password=get_password_hash(password),
+        role=role,
+        is_active=True,
+        is_verified=False,  # Email verification pending
+        verification_status="pending",
+        created_at=datetime.utcnow()
+    )
+    
+    db.add(user)
+    db.flush()  # Get user ID
+    
+    # Create company if provided
+    if company_name and company_name.strip():
+        company = Company(
+            name=company_name.strip(),
+            is_verified=False,
+            verification_source="self_registration",
+            created_at=datetime.utcnow()
+        )
+        db.add(company)
+        db.flush()
+        
+        # Create POC relationship
+        poc = POC(
+            user_id=user.id,
+            company_id=company.id,
+            role="Primary Contact",
+            is_primary=True,
+            availability_status="available"
+        )
+        db.add(poc)
+    
+    db.commit()
+    db.refresh(user)
+    
+    # Audit log
+    log_audit_event(
+        db=db,
+        user_id=user.id,
+        action="user.register",
+        resource_type="user",
+        resource_id=str(user.id),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        status_code=201,
+        details={"email": email, "role": role, "has_company": bool(company_name)}
+    )
+    
+    # Generate tokens
+    access_token = create_access_token(subject=user.id)
+    refresh_token = create_refresh_token(subject=user.id)
+    
+    return Token(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer"
+    )
+
+
+@router.post("/login", response_model=Token)
+async def login(
+    request: Request,
+    email: str,
+    password: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Login with email and password
+    """
+    email = email.lower().strip()
+    
+    # Find user
+    user = db.query(User).filter(User.email == email).first()
+    
+    if not user:
+        # Audit failed attempt
+        log_audit_event(
+            db=db,
+            user_id=None,
+            action="user.login.failed",
+            resource_type="user",
+            resource_id=email,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            status_code=401,
+            details={"reason": "user_not_found", "email": email}
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+    
+    # Check if account is locked
+    if user.locked_until and user.locked_until > datetime.utcnow():
+        minutes_left = int((user.locked_until - datetime.utcnow()).total_seconds() / 60)
+        raise HTTPException(
+            status_code=status.HTTP_423_LOCKED,
+            detail=f"Account locked due to too many failed login attempts. Try again in {minutes_left} minutes."
+        )
+    
+    # Verify password
+    if not verify_password(password, user.hashed_password):
+        # Increment failed attempts
+        user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+        
+        # Lock account after 5 failed attempts
+        if user.failed_login_attempts >= 5:
+            from datetime import timedelta
+            user.locked_until = datetime.utcnow() + timedelta(minutes=15)
+            db.commit()
+            
+            # Audit lockout
+            log_audit_event(
+                db=db,
+                user_id=user.id,
+                action="user.account.locked",
+                resource_type="user",
+                resource_id=str(user.id),
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+                status_code=423,
+                details={"reason": "too_many_failed_attempts", "attempts": user.failed_login_attempts}
+            )
+            
+            raise HTTPException(
+                status_code=status.HTTP_423_LOCKED,
+                detail="Account locked due to too many failed login attempts. Try again in 15 minutes."
+            )
+        
+        db.commit()
+        
+        # Audit failed attempt
+        log_audit_event(
+            db=db,
+            user_id=user.id,
+            action="user.login.failed",
+            resource_type="user",
+            resource_id=str(user.id),
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            status_code=401,
+            details={"reason": "invalid_password", "attempts": user.failed_login_attempts}
+        )
+        
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+    
+    # Reset failed attempts on successful login
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    user.last_login_at = datetime.utcnow()
+    user.last_login_ip = request.client.host if request.client else None
+    db.commit()
+    
+    # Audit successful login
+    log_audit_event(
+        db=db,
+        user_id=user.id,
+        action="user.login.success",
+        resource_type="user",
+        resource_id=str(user.id),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        status_code=200,
+        details={"email": email}
+    )
+    
+    # Generate tokens
+    access_token = create_access_token(subject=user.id)
+    refresh_token = create_refresh_token(subject=user.id)
+    
+    return Token(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer"
+    )
 
 
 @router.get("/linkedin")
