@@ -3,6 +3,7 @@ import { User, Mail, Building2, Save, ArrowLeft, Camera, Linkedin, Briefcase, Ph
 import { useRouter } from 'next/router';
 import axios from 'axios';
 import { dashboardTheme } from '@/styles/dashboardTheme';
+import { supabase, getSession } from '@/lib/supabase';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
@@ -55,12 +56,50 @@ export default function AccountSettings() {
 
   const fetchProfile = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
+      // Get session from Supabase
+      const { session, error: sessionError } = await getSession();
+      
+      if (sessionError || !session) {
+        console.log('No session found, redirecting to login');
         router.push('/auth/login');
         return;
       }
 
+      const token = session.access_token;
+
+      // Try to get profile from Supabase directly first
+      const { data: supabaseProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      if (supabaseProfile) {
+        setProfile({
+          id: supabaseProfile.id,
+          email: supabaseProfile.email,
+          name: supabaseProfile.name,
+          profile_picture_url: supabaseProfile.profile_picture_url,
+          user_type: supabaseProfile.user_type,
+          is_verified: supabaseProfile.is_verified,
+          created_at: supabaseProfile.created_at,
+          linkedin_profile_url: supabaseProfile.linkedin_profile_url,
+          linkedin_id: supabaseProfile.linkedin_id,
+          last_linkedin_verification: supabaseProfile.last_linkedin_verification
+        });
+        setFormData({
+          name: supabaseProfile.name || '',
+          linkedin_profile_url: supabaseProfile.linkedin_profile_url || '',
+          role: '',
+          phone: '',
+          availability_status: 'available'
+        });
+        setPreviewUrl(supabaseProfile.profile_picture_url || '');
+        setLoading(false);
+        return;
+      }
+
+      // Fallback to API if Supabase direct query fails
       const response = await axios.get(`${API_URL}/api/v1/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -144,7 +183,10 @@ export default function AccountSettings() {
     formData.append('file', selectedFile);
 
     try {
-      const token = localStorage.getItem('access_token');
+      const { session } = await getSession();
+      if (!session) throw new Error('No session');
+      
+      const token = session.access_token;
       const response = await axios.post(
         `${API_URL}/api/v1/auth/upload-profile-picture`,
         formData,
@@ -171,11 +213,13 @@ export default function AccountSettings() {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
+      const { session } = await getSession();
+      if (!session) {
         router.push('/auth/login');
         return;
       }
+      
+      const token = session.access_token;
 
       // Upload image if selected
       let profile_picture_url = profile?.profile_picture_url;
@@ -183,28 +227,37 @@ export default function AccountSettings() {
         profile_picture_url = await uploadProfilePicture();
       }
 
-      const response = await axios.patch(
-        `${API_URL}/api/v1/auth/profile`,
-        {
+      // Update profile in Supabase directly
+      const { data: updatedProfile, error: updateError } = await supabase
+        .from('profiles')
+        .update({
           name: formData.name,
           linkedin_profile_url: formData.linkedin_profile_url,
           ...(profile_picture_url && { profile_picture_url })
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+        })
+        .eq('id', session.user.id)
+        .select()
+        .single();
 
-      setProfile(response.data);
+      if (updateError) {
+        throw updateError;
+      }
+
+      if (updatedProfile) {
+        setProfile({
+          ...profile!,
+          name: updatedProfile.name,
+          linkedin_profile_url: updatedProfile.linkedin_profile_url,
+          profile_picture_url: updatedProfile.profile_picture_url
+        });
+      }
+
       setSelectedFile(null);
       setSuccess('Profile updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       console.error('Failed to update profile:', err);
-      setError(err.response?.data?.detail || 'Failed to update profile');
+      setError(err.message || 'Failed to update profile');
     } finally {
       setSaving(false);
     }
