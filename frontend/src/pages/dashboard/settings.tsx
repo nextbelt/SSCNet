@@ -249,9 +249,12 @@ export default function AccountSettings() {
       const token = session.access_token;
 
       // Upload image if selected
-      let profile_picture_url = profile?.profile_picture_url;
+      let profile_picture_url: string | undefined = profile?.profile_picture_url;
       if (selectedFile) {
-        profile_picture_url = await uploadProfilePicture();
+        const uploadedUrl = await uploadProfilePicture();
+        if (uploadedUrl) {
+          profile_picture_url = uploadedUrl;
+        }
       }
 
       // Update profile in Supabase directly
