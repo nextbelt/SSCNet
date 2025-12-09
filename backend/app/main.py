@@ -57,11 +57,17 @@ async def lifespan(app: FastAPI):
     logger.info("Starting LinkedProcurement API")
     
     # Initialize Sentry for error tracking
-    init_sentry()
+    try:
+        init_sentry()
+    except Exception as e:
+        logger.warning(f"Sentry initialization failed: {e}")
     
-    # Create database tables
-    create_tables()
-    logger.info("Database tables created/verified")
+    # Create database tables (skip if using Supabase - tables already exist)
+    try:
+        create_tables()
+        logger.info("Database tables created/verified")
+    except Exception as e:
+        logger.warning(f"Database table creation skipped (using Supabase): {e}")
     
     yield
     
