@@ -304,9 +304,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Documentation**: [docs.sscn.com](https://docs.sscn.com)
-- **Email**: support@sscn.com
-- **Slack**: [Join our community](https://slack.sscn.com)
+- **Website**: [linkedprocurement.com](https://linkedprocurement.com)
+- **Email**: support@linkedprocurement.com
+- **Documentation**: Coming soon
 
 ## 🏢 Business Model
 
@@ -323,4 +323,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ for the global supply chain community**
+**LinkedProcurement** - Built with ❤️ for the global supply chain community
+
+🌐 [linkedprocurement.com](https://linkedprocurement.com)

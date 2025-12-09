@@ -111,6 +111,11 @@ cors_origins = [
     # Railway Production
     "https://loyal-inspiration-production.up.railway.app",
     "https://sscnet-production.up.railway.app",
+    # Production Domain
+    "https://linkedprocurement.com",
+    "https://www.linkedprocurement.com",
+    "https://api.linkedprocurement.com",
+    "https://app.linkedprocurement.com",
 ]
 # Add any additional origins from settings
 if settings.allowed_origins:

@@ -336,7 +336,12 @@ audit_logs (
 
 ## 🚀 Deployment Status
 
-### Railway Platform:
+### Production Domain:
+- **Website:** https://linkedprocurement.com (pending DNS setup)
+- **API:** https://api.linkedprocurement.com (pending DNS setup)
+- **App:** https://app.linkedprocurement.com (pending DNS setup)
+
+### Railway Platform (Current):
 - **Backend API:** https://sscnet-production.up.railway.app
   - Status: ✅ Running
   - Health: https://sscnet-production.up.railway.app/api/health
@@ -346,10 +351,10 @@ audit_logs (
   - Status: ✅ Running
   - Cookie Consent: ✅ Active on all pages
 
-- **Database:** PostgreSQL on Railway
+- **Database:** Supabase PostgreSQL
   - Status: ✅ Running
-  - Encryption: ✅ Enabled (Railway default)
-  - Backups: ✅ Daily automated (7-day retention)
+  - Encryption: ✅ Enabled
+  - Backups: ✅ Daily automated
 
 ---
 

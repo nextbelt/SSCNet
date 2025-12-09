@@ -202,11 +202,32 @@ railway up
 
 ## 🎯 Next Steps After Deployment
 
-1. **Domain Setup**: Add custom domains in Railway
-2. **SSL**: Railway provides HTTPS automatically
+1. **Custom Domain Setup**: 
+   - Add `linkedprocurement.com` → Frontend service
+   - Add `api.linkedprocurement.com` → Backend service
+   - Add `app.linkedprocurement.com` → Frontend service (optional subdomain)
+2. **SSL**: Railway provides HTTPS automatically for custom domains
 3. **Monitoring**: Use Railway's built-in metrics
 4. **Scaling**: Railway auto-scales based on usage
 5. **CI/CD**: Auto-deploy on git push
+
+### Custom Domain DNS Setup
+
+In your domain registrar (where you bought linkedprocurement.com):
+
+| Type  | Name | Value |
+|-------|------|-------|
+| CNAME | @    | loyal-inspiration-production.up.railway.app |
+| CNAME | www  | loyal-inspiration-production.up.railway.app |
+| CNAME | api  | sscnet-production.up.railway.app |
+| CNAME | app  | loyal-inspiration-production.up.railway.app |
+
+Then in Railway Dashboard:
+1. Go to your Frontend service → Settings → Domains
+2. Add custom domain: `linkedprocurement.com`
+3. Add custom domain: `www.linkedprocurement.com`
+4. Go to your Backend service → Settings → Domains
+5. Add custom domain: `api.linkedprocurement.com`
 
 ## 💡 Pro Tips
 

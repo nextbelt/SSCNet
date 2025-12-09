@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     environment: str = "production"
     log_level: str = "INFO"
     
+    # Production Domain
+    production_domain: str = "linkedprocurement.com"
+    
     # Security
     secret_key: str
     algorithm: str = "HS256"
