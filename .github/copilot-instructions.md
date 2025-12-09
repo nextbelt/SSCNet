@@ -1,4 +1,4 @@
-# Sourcing Supply Chain Net - Project Instructions
+# LinkedProcurement - Project Instructions
 
 ## Project Overview
 This is a comprehensive B2B supply chain sourcing platform with LinkedIn API integration, verified POCs (Points of Contact), and real-time RFQ (Request for Quote) management.

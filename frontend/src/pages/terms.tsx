@@ -10,7 +10,7 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-3">1. Acceptance of Terms</h2>
               <p>
-                By accessing or using Sourcing Supply Chain Net ("SSCN", "Platform", "Service"), you agree to be 
+                By accessing or using LinkedProcurement ("LP", "Platform", "Service"), you agree to be 
                 bound by these Terms of Service and our Privacy Policy. If you do not agree to these terms, please 
                 do not use our Platform.
               </p>
@@ -82,13 +82,13 @@ export default function TermsOfService() {
               <h2 className="text-xl font-semibold text-gray-900 mb-3">6. Content and Intellectual Property</h2>
               <h3 className="text-lg font-medium text-gray-800 mb-2">Your Content:</h3>
               <p>
-                You retain ownership of content you post. By posting content, you grant SSCN a worldwide, 
+                You retain ownership of content you post. By posting content, you grant LP a worldwide, 
                 non-exclusive, royalty-free license to use, display, and distribute your content for Platform operations.
               </p>
               
               <h3 className="text-lg font-medium text-gray-800 mb-2 mt-4">Our Content:</h3>
               <p>
-                The Platform, including design, code, logos, and trademarks, is owned by SSCN and protected by 
+                The Platform, including design, code, logos, and trademarks, is owned by LP and protected by 
                 intellectual property laws. You may not copy, modify, or distribute our content without permission.
               </p>
             </section>
@@ -96,7 +96,7 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-3">7. Business Transactions</h2>
               <p>
-                SSCN facilitates connections between buyers and suppliers but is not a party to any transactions. 
+                LP facilitates connections between buyers and suppliers but is not a party to any transactions. 
                 You are responsible for:
               </p>
               <ul className="list-disc pl-6 space-y-1 mt-2">
@@ -111,7 +111,7 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-3">8. Fees and Payment</h2>
               <p>
-                SSCN may charge fees for premium features or services. Any applicable fees will be clearly 
+                LP may charge fees for premium features or services. Any applicable fees will be clearly 
                 disclosed before you incur charges. You agree to pay all fees according to the pricing and 
                 payment terms provided.
               </p>
@@ -130,7 +130,7 @@ export default function TermsOfService() {
                 <li>SOC 2 compliance standards</li>
               </ul>
               <p className="mt-2">
-                See our <a href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</a> for details.
+                See our <a href="/privacy" className="text-[#0071e3] hover:underline">Privacy Policy</a> for details.
               </p>
             </section>
 
@@ -138,7 +138,7 @@ export default function TermsOfService() {
               <h2 className="text-xl font-semibold text-gray-900 mb-3">10. Disclaimers and Limitations</h2>
               <p className="font-semibold mb-2">THE PLATFORM IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND.</p>
               <p>
-                SSCN disclaims all warranties, express or implied, including merchantability, fitness for a 
+                LP disclaims all warranties, express or implied, including merchantability, fitness for a 
                 particular purpose, and non-infringement. We do not guarantee:
               </p>
               <ul className="list-disc pl-6 space-y-1 mt-2">
@@ -152,7 +152,7 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-3">11. Limitation of Liability</h2>
               <p>
-                TO THE MAXIMUM EXTENT PERMITTED BY LAW, SSCN SHALL NOT BE LIABLE FOR:
+                TO THE MAXIMUM EXTENT PERMITTED BY LAW, LP SHALL NOT BE LIABLE FOR:
               </p>
               <ul className="list-disc pl-6 space-y-1 mt-2">
                 <li>Indirect, incidental, special, or consequential damages</li>
@@ -161,14 +161,14 @@ export default function TermsOfService() {
                 <li>Business disputes or failed transactions between users</li>
               </ul>
               <p className="mt-2">
-                Our total liability shall not exceed the fees you paid to SSCN in the 12 months preceding the claim.
+                Our total liability shall not exceed the fees you paid to LP in the 12 months preceding the claim.
               </p>
             </section>
 
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-3">12. Indemnification</h2>
               <p>
-                You agree to indemnify and hold harmless SSCN from any claims, damages, losses, or expenses 
+                You agree to indemnify and hold harmless LP from any claims, damages, losses, or expenses 
                 (including legal fees) arising from:
               </p>
               <ul className="list-disc pl-6 space-y-1 mt-2">
@@ -182,7 +182,7 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-3">13. Account Termination</h2>
               <p>
-                SSCN may suspend or terminate your account at any time for:
+                LP may suspend or terminate your account at any time for:
               </p>
               <ul className="list-disc pl-6 space-y-1 mt-2">
                 <li>Violation of these Terms</li>
@@ -222,22 +222,22 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-3">16. Contact Information</h2>
               <div className="bg-gray-50 p-4 rounded mt-3">
-                <p><strong>Email:</strong> legal@sscn.com</p>
+                <p><strong>Email:</strong> legal@linkedprocurement.com</p>
                 <p><strong>Address:</strong> [Your Company Address]</p>
-                <p><strong>Support:</strong> support@sscn.com</p>
+                <p><strong>Support:</strong> support@linkedprocurement.com</p>
               </div>
             </section>
 
             <section className="border-t pt-6 mt-8">
-              <p className="text-sm text-gray-600">
-                By using SSCN, you acknowledge that you have read, understood, and agree to be bound by these 
+              <p className="text-sm text-[#6e6e73]">
+                By using LinkedProcurement, you acknowledge that you have read, understood, and agree to be bound by these 
                 Terms of Service and our Privacy Policy.
               </p>
             </section>
           </div>
 
           <div className="mt-8 pt-6 border-t">
-            <a href="/" className="text-blue-600 hover:text-blue-700">
+            <a href="/" className="text-[#0071e3] hover:text-[#0077ed]">
               ← Back to Home
             </a>
           </div>

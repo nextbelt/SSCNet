@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  TrendingUp, TrendingDown, BarChart3, PieChart, Calendar, 
+import {
+  TrendingUp, TrendingDown, BarChart3, PieChart, Calendar,
   Target, Award, Clock, DollarSign, Users, Eye, CheckCircle,
   AlertTriangle, XCircle, ArrowUpRight, ArrowDownRight,
-  Filter, Download, RefreshCw, Zap, Star, Trophy
+  Filter, Download, RefreshCw, Zap, Star, Trophy, Bell, User,
+  ChevronDown, Settings, Building2, LogOut
 } from 'lucide-react';
+import { useRouter } from 'next/router';
+import { dashboardTheme } from '@/styles/dashboardTheme';
 
 // Types
 interface AnalyticsData {
@@ -50,48 +53,63 @@ interface AnalyticsData {
 }
 
 const SupplierAnalytics: React.FC = () => {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'trends' | 'insights'>('overview');
   const [dateRange, setDateRange] = useState('30d');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
 
-  // Mock analytics data - would come from API
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user_type');
+    router.push('/auth/login');
+  };
+
+  // Analytics data - loaded from API
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
     overview: {
-      totalRFQsViewed: 247,
-      totalResponsesSubmitted: 89,
-      responseRate: 36.0,
-      successRate: 23.6,
-      averageResponseTime: 4.2,
-      totalRevenue: 1250000,
-      activeContracts: 12,
-      customerSatisfactionScore: 4.7
+      totalRFQsViewed: 0,
+      totalResponsesSubmitted: 0,
+      responseRate: 0,
+      successRate: 0,
+      averageResponseTime: 0,
+      totalRevenue: 0,
+      activeContracts: 0,
+      customerSatisfactionScore: 0
     },
-    trends: [
-      { period: 'Week 1', rfqsViewed: 58, responsesSubmitted: 19, successfulBids: 4, revenue: 185000 },
-      { period: 'Week 2', rfqsViewed: 62, responsesSubmitted: 23, successfulBids: 6, revenue: 245000 },
-      { period: 'Week 3', rfqsViewed: 71, responsesSubmitted: 25, successfulBids: 5, revenue: 312000 },
-      { period: 'Week 4', rfqsViewed: 56, responsesSubmitted: 22, successfulBids: 6, revenue: 508000 }
-    ],
-    performanceMetrics: [
-      { category: 'Electronics Materials', responseRate: 42.3, successRate: 28.1, averageQuoteValue: 125000, competitionLevel: 'high' },
-      { category: 'Metals & Alloys', responseRate: 38.7, successRate: 31.2, averageQuoteValue: 89000, competitionLevel: 'medium' },
-      { category: 'Plastics & Polymers', responseRate: 29.4, successRate: 15.8, averageQuoteValue: 67000, competitionLevel: 'high' },
-      { category: 'Composites', responseRate: 51.2, successRate: 39.7, averageQuoteValue: 178000, competitionLevel: 'low' }
-    ],
-    recentActivity: [
-      { id: '1', type: 'bid_won', title: 'Aluminum Component Manufacturing', company: 'AeroSpace Corp', amount: 285000, timestamp: '2 hours ago', status: 'success' },
-      { id: '2', type: 'response_submitted', title: 'Copper Wire Harnesses', company: 'ElectroTech Solutions', amount: 67000, timestamp: '5 hours ago', status: 'warning' },
-      { id: '3', type: 'bid_lost', title: 'Steel Fasteners Bulk Order', company: 'Construction Plus', amount: 45000, timestamp: '1 day ago', status: 'error' },
-      { id: '4', type: 'rfq_viewed', title: 'Custom PCB Assembly', company: 'Tech Innovators', timestamp: '1 day ago', status: 'success' },
-      { id: '5', type: 'bid_won', title: 'Titanium Precision Parts', company: 'Medical Devices Inc', amount: 156000, timestamp: '2 days ago', status: 'success' }
-    ],
+    trends: [],
+    performanceMetrics: [],
+    recentActivity: [],
     competitorInsights: {
-      avgResponseTime: 6.8,
-      avgSuccessRate: 19.3,
-      topCategories: ['Electronics Materials', 'Automotive Parts', 'Industrial Components'],
-      marketPosition: 'challenger'
+      avgResponseTime: 0,
+      avgSuccessRate: 0,
+      topCategories: [],
+      marketPosition: 'follower'
     }
   });
+
+  // Load analytics data from API
+  useEffect(() => {
+    const loadAnalytics = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/supplier/analytics', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setAnalyticsData(data);
+        }
+      } catch (error) {
+        console.error('Error loading analytics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAnalytics();
+  }, []);
 
   const getMetricColor = (value: number, benchmark: number, inverse = false) => {
     const isGood = inverse ? value < benchmark : value > benchmark;
@@ -106,10 +124,10 @@ const SupplierAnalytics: React.FC = () => {
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'bid_won': return <Trophy className="w-5 h-5 text-green-500" />;
-      case 'response_submitted': return <CheckCircle className="w-5 h-5 text-blue-500" />;
+      case 'response_submitted': return <CheckCircle className="w-5 h-5 text-primary-600" />;
       case 'bid_lost': return <XCircle className="w-5 h-5 text-red-500" />;
-      case 'rfq_viewed': return <Eye className="w-5 h-5 text-gray-500" />;
-      default: return <Clock className="w-5 h-5 text-gray-400" />;
+      case 'rfq_viewed': return <Eye className="w-5 h-5 text-secondary-400" />;
+      default: return <Clock className="w-5 h-5 text-secondary-400" />;
     }
   };
 
@@ -117,66 +135,66 @@ const SupplierAnalytics: React.FC = () => {
     <div className="space-y-8">
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-secondary-100 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">RFQs Viewed</p>
-              <p className="text-3xl font-bold text-gray-900">{analyticsData.overview.totalRFQsViewed}</p>
+              <p className="text-sm font-medium text-secondary-500">RFQs Viewed</p>
+              <p className="text-3xl font-bold text-secondary-900 mt-1">{analyticsData.overview.totalRFQsViewed}</p>
               <div className="flex items-center mt-2">
                 <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                <span className="text-sm text-green-600">+12% vs last month</span>
+                <span className="text-sm text-green-600 font-medium">+12% vs last month</span>
               </div>
             </div>
-            <div className="p-3 bg-blue-100 rounded-full">
-              <Eye className="w-6 h-6 text-blue-600" />
+            <div className="p-3 bg-primary-50 rounded-xl">
+              <Eye className="w-6 h-6 text-primary-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-secondary-100 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Response Rate</p>
-              <p className="text-3xl font-bold text-gray-900">{analyticsData.overview.responseRate}%</p>
+              <p className="text-sm font-medium text-secondary-500">Response Rate</p>
+              <p className="text-3xl font-bold text-secondary-900 mt-1">{analyticsData.overview.responseRate}%</p>
               <div className="flex items-center mt-2">
                 <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                <span className="text-sm text-green-600">+3.2% vs industry avg</span>
+                <span className="text-sm text-green-600 font-medium">+3.2% vs industry avg</span>
               </div>
             </div>
-            <div className="p-3 bg-green-100 rounded-full">
+            <div className="p-3 bg-green-50 rounded-xl">
               <Target className="w-6 h-6 text-green-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-secondary-100 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Success Rate</p>
-              <p className="text-3xl font-bold text-gray-900">{analyticsData.overview.successRate}%</p>
+              <p className="text-sm font-medium text-secondary-500">Success Rate</p>
+              <p className="text-3xl font-bold text-secondary-900 mt-1">{analyticsData.overview.successRate}%</p>
               <div className="flex items-center mt-2">
                 <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                <span className="text-sm text-green-600">+4.3% vs industry avg</span>
+                <span className="text-sm text-green-600 font-medium">+4.3% vs industry avg</span>
               </div>
             </div>
-            <div className="p-3 bg-yellow-100 rounded-full">
-              <Award className="w-6 h-6 text-yellow-600" />
+            <div className="p-3 bg-primary-50 rounded-xl">
+              <Award className="w-6 h-6 text-primary-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-secondary-100 hover:shadow-md transition-all duration-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-3xl font-bold text-gray-900">${(analyticsData.overview.totalRevenue / 1000000).toFixed(1)}M</p>
+              <p className="text-sm font-medium text-secondary-500">Total Revenue</p>
+              <p className="text-3xl font-bold text-secondary-900 mt-1">${(analyticsData.overview.totalRevenue / 1000000).toFixed(1)}M</p>
               <div className="flex items-center mt-2">
                 <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                <span className="text-sm text-green-600">+18% vs last quarter</span>
+                <span className="text-sm text-green-600 font-medium">+18% vs last quarter</span>
               </div>
             </div>
-            <div className="p-3 bg-purple-100 rounded-full">
-              <DollarSign className="w-6 h-6 text-purple-600" />
+            <div className="p-3 bg-primary-50 rounded-xl">
+              <DollarSign className="w-6 h-6 text-primary-600" />
             </div>
           </div>
         </div>
@@ -184,70 +202,75 @@ const SupplierAnalytics: React.FC = () => {
 
       {/* Secondary Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <div className="flex items-center gap-3">
-            <Clock className="w-8 h-8 text-blue-500" />
-            <div>
-              <p className="text-sm text-gray-600">Avg Response Time</p>
-              <p className="text-xl font-bold text-gray-900">{analyticsData.overview.averageResponseTime} days</p>
-            </div>
+        <div className="bg-white border border-secondary-200 rounded-xl shadow-sm p-5 flex items-center gap-4">
+          <div className="p-3 bg-primary-50 rounded-lg">
+            <Clock className="w-6 h-6 text-primary-600" />
+          </div>
+          <div>
+            <p className="text-sm text-secondary-500 font-medium">Avg Response Time</p>
+            <p className="text-xl font-bold text-secondary-900">{analyticsData.overview.averageResponseTime} days</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <div className="flex items-center gap-3">
-            <Users className="w-8 h-8 text-green-500" />
-            <div>
-              <p className="text-sm text-gray-600">Active Contracts</p>
-              <p className="text-xl font-bold text-gray-900">{analyticsData.overview.activeContracts}</p>
-            </div>
+        <div className="bg-white border border-secondary-200 rounded-xl shadow-sm p-5 flex items-center gap-4">
+          <div className="p-3 bg-green-50 rounded-lg">
+            <Users className="w-6 h-6 text-green-600" />
+          </div>
+          <div>
+            <p className="text-sm text-secondary-500 font-medium">Active Contracts</p>
+            <p className="text-xl font-bold text-secondary-900">{analyticsData.overview.activeContracts}</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <div className="flex items-center gap-3">
-            <Star className="w-8 h-8 text-yellow-500" />
-            <div>
-              <p className="text-sm text-gray-600">Customer Rating</p>
-              <p className="text-xl font-bold text-gray-900">{analyticsData.overview.customerSatisfactionScore}/5.0</p>
-            </div>
+        <div className="bg-white border border-secondary-200 rounded-xl shadow-sm p-5 flex items-center gap-4">
+          <div className="p-3 bg-primary-50 rounded-lg">
+            <Star className="w-6 h-6 text-primary-600" />
+          </div>
+          <div>
+            <p className="text-sm text-secondary-500 font-medium">Customer Rating</p>
+            <p className="text-xl font-bold text-secondary-900">{analyticsData.overview.customerSatisfactionScore}/5.0</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <div className="flex items-center gap-3">
-            <Zap className="w-8 h-8 text-orange-500" />
-            <div>
-              <p className="text-sm text-gray-600">Market Position</p>
-              <p className="text-xl font-bold text-gray-900 capitalize">{analyticsData.competitorInsights.marketPosition}</p>
-            </div>
+        <div className="bg-white border border-secondary-200 rounded-xl shadow-sm p-5 flex items-center gap-4">
+          <div className="p-3 bg-primary-50 rounded-lg">
+            <Zap className="w-6 h-6 text-primary-600" />
+          </div>
+          <div>
+            <p className="text-sm text-secondary-500 font-medium">Market Position</p>
+            <p className="text-xl font-bold text-secondary-900 capitalize">{analyticsData.competitorInsights.marketPosition}</p>
           </div>
         </div>
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white border border-secondary-200 rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
-          <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">View All</button>
+          <h3 className="text-lg font-bold text-secondary-900">Recent Activity</h3>
+          <button className="text-primary-600 hover:text-primary-700 text-sm font-medium transition-colors">View All</button>
         </div>
-        
+
         <div className="space-y-4">
           {analyticsData.recentActivity.slice(0, 5).map((activity) => (
-            <div key={activity.id} className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-              {getActivityIcon(activity.type)}
+            <div key={activity.id} className="flex items-center gap-4 p-4 hover:bg-secondary-50 rounded-xl transition-colors border border-transparent hover:border-secondary-100">
+              <div className={`p-2 rounded-lg ${activity.type === 'bid_won' ? 'bg-green-50' :
+                  activity.type === 'bid_lost' ? 'bg-red-50' :
+                    activity.type === 'response_submitted' ? 'bg-primary-50' : 'bg-secondary-100'
+                }`}>
+                {getActivityIcon(activity.type)}
+              </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <h4 className="font-medium text-gray-900">{activity.title}</h4>
+                  <h4 className="font-semibold text-secondary-900">{activity.title}</h4>
                   {activity.amount && (
-                    <span className="text-green-600 font-semibold">
+                    <span className="text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded text-xs">
                       ${activity.amount.toLocaleString()}
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-600">{activity.company}</p>
+                <p className="text-sm text-secondary-500">{activity.company}</p>
               </div>
-              <span className="text-sm text-gray-500">{activity.timestamp}</span>
+              <span className="text-sm text-secondary-400 font-medium">{activity.timestamp}</span>
             </div>
           ))}
         </div>
@@ -258,56 +281,55 @@ const SupplierAnalytics: React.FC = () => {
   const renderPerformanceTab = () => (
     <div className="space-y-8">
       {/* Performance by Category */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Performance by Material Category</h3>
-        
+      <div className="bg-white border border-secondary-200 rounded-xl shadow-sm p-6">
+        <h3 className="text-lg font-bold text-secondary-900 mb-6">Performance by Material Category</h3>
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Category</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Response Rate</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Success Rate</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Avg Quote Value</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Competition</th>
+              <tr className="border-b border-secondary-200">
+                <th className="text-left py-3 px-4 font-medium text-secondary-500 text-sm uppercase tracking-wider">Category</th>
+                <th className="text-left py-3 px-4 font-medium text-secondary-500 text-sm uppercase tracking-wider">Response Rate</th>
+                <th className="text-left py-3 px-4 font-medium text-secondary-500 text-sm uppercase tracking-wider">Success Rate</th>
+                <th className="text-left py-3 px-4 font-medium text-secondary-500 text-sm uppercase tracking-wider">Avg Quote Value</th>
+                <th className="text-left py-3 px-4 font-medium text-secondary-500 text-sm uppercase tracking-wider">Competition</th>
               </tr>
             </thead>
             <tbody>
               {analyticsData.performanceMetrics.map((metric, index) => (
-                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-4 px-4 font-medium text-gray-900">{metric.category}</td>
+                <tr key={index} className="border-b border-secondary-100 hover:bg-secondary-50 transition-colors">
+                  <td className="py-4 px-4 font-medium text-secondary-900">{metric.category}</td>
                   <td className="py-4 px-4">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{metric.responseRate}%</span>
-                      <div className="w-20 h-2 bg-gray-200 rounded-full">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full" 
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-secondary-900 w-12">{metric.responseRate}%</span>
+                      <div className="w-24 h-2 bg-secondary-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary-600 rounded-full"
                           style={{ width: `${metric.responseRate}%` }}
                         />
                       </div>
                     </div>
                   </td>
                   <td className="py-4 px-4">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{metric.successRate}%</span>
-                      <div className="w-20 h-2 bg-gray-200 rounded-full">
-                        <div 
-                          className="h-full bg-green-500 rounded-full" 
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-secondary-900 w-12">{metric.successRate}%</span>
+                      <div className="w-24 h-2 bg-secondary-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-500 rounded-full"
                           style={{ width: `${metric.successRate}%` }}
                         />
                       </div>
                     </div>
                   </td>
-                  <td className="py-4 px-4 font-semibold text-gray-900">
+                  <td className="py-4 px-4 font-semibold text-secondary-900">
                     ${metric.averageQuoteValue.toLocaleString()}
                   </td>
                   <td className="py-4 px-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      metric.competitionLevel === 'low' ? 'bg-green-100 text-green-700' :
-                      metric.competitionLevel === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      {metric.competitionLevel}
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${metric.competitionLevel === 'low' ? 'bg-green-50 text-green-700 border-green-200' :
+                        metric.competitionLevel === 'medium' ? 'bg-primary-50 text-primary-700 border-primary-200' :
+                          'bg-red-50 text-red-700 border-red-200'
+                      }`}>
+                      {metric.competitionLevel.toUpperCase()}
                     </span>
                   </td>
                 </tr>
@@ -319,55 +341,55 @@ const SupplierAnalytics: React.FC = () => {
 
       {/* Performance Insights */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Strengths</h3>
+        <div className="bg-white border border-secondary-200 rounded-xl shadow-sm p-6">
+          <h3 className="text-lg font-bold text-secondary-900 mb-4">Strengths</h3>
           <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-500" />
+            <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-100 rounded-xl">
+              <CheckCircle className="w-5 h-5 text-green-600" />
               <div>
-                <p className="font-medium text-green-900">Fast Response Time</p>
+                <p className="font-semibold text-green-800">Fast Response Time</p>
                 <p className="text-sm text-green-700">38% faster than industry average</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-500" />
+            <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-100 rounded-xl">
+              <CheckCircle className="w-5 h-5 text-green-600" />
               <div>
-                <p className="font-medium text-green-900">High Success in Composites</p>
+                <p className="font-semibold text-green-800">High Success in Composites</p>
                 <p className="text-sm text-green-700">39.7% success rate in low-competition category</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-500" />
+            <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-100 rounded-xl">
+              <CheckCircle className="w-5 h-5 text-green-600" />
               <div>
-                <p className="font-medium text-green-900">Customer Satisfaction</p>
+                <p className="font-semibold text-green-800">Customer Satisfaction</p>
                 <p className="text-sm text-green-700">4.7/5.0 rating from buyers</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Improvement Areas</h3>
+        <div className="bg-white border border-secondary-200 rounded-xl shadow-sm p-6">
+          <h3 className="text-lg font-bold text-secondary-900 mb-4">Improvement Areas</h3>
           <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
-              <AlertTriangle className="w-5 h-5 text-yellow-500" />
+            <div className="flex items-center gap-3 p-4 bg-primary-50 border border-primary-100 rounded-xl">
+              <AlertTriangle className="w-5 h-5 text-primary-600" />
               <div>
-                <p className="font-medium text-yellow-900">Plastics & Polymers</p>
-                <p className="text-sm text-yellow-700">Low success rate (15.8%) in high-competition market</p>
+                <p className="font-semibold text-primary-900">Plastics & Polymers</p>
+                <p className="text-sm text-primary-700">Low success rate (15.8%) in high-competition market</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
-              <AlertTriangle className="w-5 h-5 text-yellow-500" />
+            <div className="flex items-center gap-3 p-4 bg-primary-50 border border-primary-100 rounded-xl">
+              <AlertTriangle className="w-5 h-5 text-primary-600" />
               <div>
-                <p className="font-medium text-yellow-900">Response Volume</p>
-                <p className="text-sm text-yellow-700">Could increase response rate from 36% to 45%</p>
+                <p className="font-semibold text-primary-900">Response Volume</p>
+                <p className="text-sm text-primary-700">Could increase response rate from 36% to 45%</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
-              <AlertTriangle className="w-5 h-5 text-yellow-500" />
+            <div className="flex items-center gap-3 p-4 bg-secondary-50 border border-secondary-200 rounded-xl">
+              <TrendingUp className="w-5 h-5 text-secondary-600" />
               <div>
-                <p className="font-medium text-yellow-900">Competitive Pricing</p>
-                <p className="text-sm text-yellow-700">Consider pricing strategy in electronics materials</p>
+                <p className="font-semibold text-secondary-900">Competitive Pricing</p>
+                <p className="text-sm text-secondary-600">Consider pricing strategy in electronics materials</p>
               </div>
             </div>
           </div>
@@ -379,14 +401,14 @@ const SupplierAnalytics: React.FC = () => {
   const renderTrendsTab = () => (
     <div className="space-y-8">
       {/* Trends Chart Placeholder */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className={`${dashboardTheme.cards.primary} ${dashboardTheme.cards.padding.medium}`}>
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Performance Trends</h3>
+          <h3 className={dashboardTheme.typography.heading4}>Performance Trends</h3>
           <div className="flex gap-2">
-            <select 
+            <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className={dashboardTheme.forms.select}
             >
               <option value="7d">Last 7 days</option>
               <option value="30d">Last 30 days</option>
@@ -399,31 +421,31 @@ const SupplierAnalytics: React.FC = () => {
         {/* Simple trends visualization */}
         <div className="space-y-4">
           {analyticsData.trends.map((trend, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+            <div key={index} className={`${dashboardTheme.cards.secondary} ${dashboardTheme.cards.padding.small} flex items-center justify-between`}>
               <div className="flex items-center gap-4">
-                <div className="w-16 text-sm font-medium text-gray-600">{trend.period}</div>
-                <div className="flex gap-6">
+                <div className={`w-16 text-sm font-medium text-secondary-500`}>{trend.period}</div>
+                <div className="flex gap-8">
                   <div>
-                    <p className="text-xs text-gray-500">RFQs Viewed</p>
-                    <p className="text-lg font-semibold text-blue-600">{trend.rfqsViewed}</p>
+                    <p className={dashboardTheme.typography.caption}>RFQs Viewed</p>
+                    <p className="text-lg font-semibold text-primary-600">{trend.rfqsViewed}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Responses</p>
+                    <p className={dashboardTheme.typography.caption}>Responses</p>
                     <p className="text-lg font-semibold text-green-600">{trend.responsesSubmitted}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Wins</p>
-                    <p className="text-lg font-semibold text-yellow-600">{trend.successfulBids}</p>
+                    <p className={dashboardTheme.typography.caption}>Wins</p>
+                    <p className="text-lg font-semibold text-primary-600">{trend.successfulBids}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Revenue</p>
-                    <p className="text-lg font-semibold text-purple-600">${(trend.revenue / 1000).toFixed(0)}K</p>
+                    <p className={dashboardTheme.typography.caption}>Revenue</p>
+                    <p className="text-lg font-semibold text-secondary-900">${(trend.revenue / 1000).toFixed(0)}K</p>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-gray-400" />
-                <span className="text-sm text-gray-500">
+                <BarChart3 className="w-5 h-5 text-secondary-400" />
+                <span className={dashboardTheme.typography.bodySmall}>
                   {((trend.responsesSubmitted / trend.rfqsViewed) * 100).toFixed(1)}% response rate
                 </span>
               </div>
@@ -434,38 +456,38 @@ const SupplierAnalytics: React.FC = () => {
 
       {/* Trend Analysis */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Trending Up 📈</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Response Volume</span>
-              <span className="font-semibold text-green-600">+15.3%</span>
+        <div className={`${dashboardTheme.cards.primary} ${dashboardTheme.cards.padding.medium}`}>
+          <h3 className={`${dashboardTheme.typography.heading4} mb-4`}>Trending Up</h3>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-100">
+              <span className="font-medium text-secondary-700">Response Volume</span>
+              <span className="font-bold text-green-600">+15.3%</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Win Rate</span>
-              <span className="font-semibold text-green-600">+8.7%</span>
+            <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-100">
+              <span className="font-medium text-secondary-700">Win Rate</span>
+              <span className="font-bold text-green-600">+8.7%</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Quote Value</span>
-              <span className="font-semibold text-green-600">+22.1%</span>
+            <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-100">
+              <span className="font-medium text-secondary-700">Quote Value</span>
+              <span className="font-bold text-green-600">+22.1%</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Areas to Watch 👀</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Response Time</span>
-              <span className="font-semibold text-yellow-600">-5.2%</span>
+        <div className={`${dashboardTheme.cards.primary} ${dashboardTheme.cards.padding.medium}`}>
+          <h3 className={`${dashboardTheme.typography.heading4} mb-4`}>Areas to Watch</h3>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center p-3 bg-primary-50 rounded-lg border border-primary-100">
+              <span className="font-medium text-secondary-700">Response Time</span>
+              <span className="font-bold text-primary-600">-5.2%</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Customer Ratings</span>
-              <span className="font-semibold text-yellow-600">-2.1%</span>
+            <div className="flex justify-between items-center p-3 bg-primary-50 rounded-lg border border-primary-100">
+              <span className="font-medium text-secondary-700">Customer Ratings</span>
+              <span className="font-bold text-primary-600">-2.1%</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Market Share</span>
-              <span className="font-semibold text-red-600">-1.8%</span>
+            <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg border border-red-100">
+              <span className="font-medium text-secondary-700">Market Share</span>
+              <span className="font-bold text-red-600">-1.8%</span>
             </div>
           </div>
         </div>
@@ -476,50 +498,50 @@ const SupplierAnalytics: React.FC = () => {
   const renderInsightsTab = () => (
     <div className="space-y-8">
       {/* Competitive Analysis */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Competitive Position</h3>
-        
+      <div className={`${dashboardTheme.cards.primary} ${dashboardTheme.cards.padding.medium}`}>
+        <h3 className={`${dashboardTheme.typography.heading4} mb-6`}>Competitive Position</h3>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg">
-            <h4 className="font-semibold text-gray-900 mb-2">Your Performance</h4>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Response Time</span>
-                <span className="font-medium text-blue-600">{analyticsData.overview.averageResponseTime} days</span>
+          <div className={`text-center ${dashboardTheme.cards.padding.medium} bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl border border-primary-200`}>
+            <h4 className="font-bold text-primary-900 mb-3">Your Performance</h4>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-primary-700 font-medium">Response Time</span>
+                <span className="font-bold text-primary-900">{analyticsData.overview.averageResponseTime} days</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Success Rate</span>
-                <span className="font-medium text-blue-600">{analyticsData.overview.successRate}%</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-center p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg">
-            <h4 className="font-semibold text-gray-900 mb-2">Industry Average</h4>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Response Time</span>
-                <span className="font-medium text-gray-600">{analyticsData.competitorInsights.avgResponseTime} days</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Success Rate</span>
-                <span className="font-medium text-gray-600">{analyticsData.competitorInsights.avgSuccessRate}%</span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-primary-700 font-medium">Success Rate</span>
+                <span className="font-bold text-primary-900">{analyticsData.overview.successRate}%</span>
               </div>
             </div>
           </div>
 
-          <div className="text-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg">
-            <h4 className="font-semibold text-gray-900 mb-2">Your Advantage</h4>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Faster by</span>
-                <span className="font-medium text-green-600">
+          <div className={`text-center ${dashboardTheme.cards.padding.medium} bg-secondary-50 rounded-xl border border-secondary-200`}>
+            <h4 className="font-bold text-secondary-900 mb-3">Industry Average</h4>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-secondary-600 font-medium">Response Time</span>
+                <span className="font-bold text-secondary-800">{analyticsData.competitorInsights.avgResponseTime} days</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-secondary-600 font-medium">Success Rate</span>
+                <span className="font-bold text-secondary-800">{analyticsData.competitorInsights.avgSuccessRate}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className={`text-center ${dashboardTheme.cards.padding.medium} bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200`}>
+            <h4 className="font-bold text-green-900 mb-3">Your Advantage</h4>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-green-700 font-medium">Faster by</span>
+                <span className="font-bold text-green-900">
                   {(analyticsData.competitorInsights.avgResponseTime - analyticsData.overview.averageResponseTime).toFixed(1)} days
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Higher success</span>
-                <span className="font-medium text-green-600">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-green-700 font-medium">Higher success</span>
+                <span className="font-bold text-green-900">
                   +{(analyticsData.overview.successRate - analyticsData.competitorInsights.avgSuccessRate).toFixed(1)}%
                 </span>
               </div>
@@ -530,58 +552,58 @@ const SupplierAnalytics: React.FC = () => {
 
       {/* Market Insights */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Market Opportunities</h3>
+        <div className={`${dashboardTheme.cards.primary} ${dashboardTheme.cards.padding.medium}`}>
+          <h3 className={`${dashboardTheme.typography.heading4} mb-4`}>Market Opportunities</h3>
           <div className="space-y-4">
-            <div className="p-4 border-l-4 border-green-500 bg-green-50">
-              <h4 className="font-medium text-green-900">Emerging Categories</h4>
+            <div className="p-4 border-l-4 border-green-500 bg-green-50 rounded-r-lg">
+              <h4 className="font-bold text-green-800">Emerging Categories</h4>
               <p className="text-sm text-green-700 mt-1">
                 IoT Components and Smart Materials showing 45% growth in RFQ volume
               </p>
             </div>
-            <div className="p-4 border-l-4 border-blue-500 bg-blue-50">
-              <h4 className="font-medium text-blue-900">Geographic Expansion</h4>
-              <p className="text-sm text-blue-700 mt-1">
+            <div className="p-4 border-l-4 border-primary-500 bg-primary-50 rounded-r-lg">
+              <h4 className="font-bold text-primary-800">Geographic Expansion</h4>
+              <p className="text-sm text-primary-700 mt-1">
                 Southeast markets showing high demand for your specialties
               </p>
             </div>
-            <div className="p-4 border-l-4 border-purple-500 bg-purple-50">
-              <h4 className="font-medium text-purple-900">Premium Segments</h4>
-              <p className="text-sm text-purple-700 mt-1">
+            <div className="p-4 border-l-4 border-secondary-500 bg-secondary-50 rounded-r-lg">
+              <h4 className="font-bold text-secondary-800">Premium Segments</h4>
+              <p className="text-sm text-secondary-700 mt-1">
                 Aerospace and medical sectors paying 30% premium for quality
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Strategic Recommendations</h3>
+        <div className={`${dashboardTheme.cards.primary} ${dashboardTheme.cards.padding.medium}`}>
+          <h3 className={`${dashboardTheme.typography.heading4} mb-4`}>Strategic Recommendations</h3>
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-bold text-blue-600">1</span>
+              <div className="w-6 h-6 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 font-bold text-xs">
+                1
               </div>
               <div>
-                <h4 className="font-medium text-gray-900">Optimize Response Time</h4>
-                <p className="text-sm text-gray-600">Reduce to 3 days to gain competitive edge</p>
+                <h4 className="font-bold text-secondary-900">Optimize Response Time</h4>
+                <p className="text-sm text-secondary-600 mt-0.5">Reduce to 3 days to gain competitive edge</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-bold text-green-600">2</span>
+              <div className="w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 font-bold text-xs">
+                2
               </div>
               <div>
-                <h4 className="font-medium text-gray-900">Expand Composite Focus</h4>
-                <p className="text-sm text-gray-600">Leverage 39.7% success rate in low competition</p>
+                <h4 className="font-bold text-secondary-900">Expand Composite Focus</h4>
+                <p className="text-sm text-secondary-600 mt-0.5">Leverage 39.7% success rate in low competition</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-bold text-yellow-600">3</span>
+              <div className="w-6 h-6 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 font-bold text-xs">
+                3
               </div>
               <div>
-                <h4 className="font-medium text-gray-900">Improve Pricing Strategy</h4>
-                <p className="text-sm text-gray-600">Analyze lost bids to optimize quote values</p>
+                <h4 className="font-bold text-secondary-900">Improve Pricing Strategy</h4>
+                <p className="text-sm text-secondary-600 mt-0.5">Analyze lost bids to optimize quote values</p>
               </div>
             </div>
           </div>
@@ -591,37 +613,149 @@ const SupplierAnalytics: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <div className="flex items-center gap-4 mb-2">
-              <a 
-                href="/dashboard/supplier"
-                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-              >
-                ← Back to Dashboard
+    <div className="min-h-screen bg-secondary-50 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className={dashboardTheme.decorativeBackground.container}>
+        <div
+          className={dashboardTheme.decorativeBackground.dotPattern.className}
+          style={dashboardTheme.decorativeBackground.dotPattern.style}
+        />
+        <div className={dashboardTheme.decorativeBackground.orb1} />
+        <div className={dashboardTheme.decorativeBackground.orb2} />
+      </div>
+
+      {/* Top Navigation */}
+      <nav className={dashboardTheme.navigation.container}>
+        <div className={dashboardTheme.navigation.innerContainer}>
+          <div className={dashboardTheme.navigation.flexContainer}>
+            {/* Logo */}
+            <div className={dashboardTheme.navigation.logoSection}>
+              <a href="/dashboard/supplier" className={dashboardTheme.navigation.logoButton}>
+                <div className={dashboardTheme.navigation.logoBox}>
+                  <span className={dashboardTheme.navigation.logoText}>LP</span>
+                </div>
+                <span className={dashboardTheme.navigation.brandText}>
+                  LinkedProcurement
+                </span>
               </a>
-              <span className="text-gray-300">|</span>
-              <a 
+            </div>
+
+            {/* Center Navigation Menu */}
+            <div className={dashboardTheme.navigation.navButtonsContainer}>
+              <div className="hidden md:flex gap-2">
+                <a
+                  href="/dashboard/supplier"
+                  className={dashboardTheme.navigation.navButton}
+                >
+                  AI-Match RFQs
+                </a>
+                <a
+                  href="/dashboard/supplier#responses"
+                  className={dashboardTheme.navigation.navButton}
+                >
+                  My Responses
+                </a>
+                <a
+                  href="/dashboard/supplier-profile"
+                  className={dashboardTheme.navigation.navButton}
+                >
+                  My Profile
+                </a>
+                <a
+                  href="/dashboard/supplier-analytics"
+                  className={dashboardTheme.navigation.navButtonActive}
+                >
+                  Analytics
+                </a>
+                <a
+                  href="/dashboard/messages"
+                  className={dashboardTheme.navigation.navButton}
+                >
+                  Messages
+                </a>
+              </div>
+            </div>
+
+            {/* Right Side */}
+            <div className={dashboardTheme.navigation.rightSection}>
+              <button className={dashboardTheme.navigation.bellButton}>
+                <Bell size={20} />
+                <span className={dashboardTheme.navigation.bellDot}></span>
+              </button>
+
+              {/* Account Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowAccountMenu(!showAccountMenu)}
+                  className={dashboardTheme.navigation.accountButton}
+                >
+                  <User size={20} />
+                  <span className="hidden md:inline font-medium">Account</span>
+                  <ChevronDown size={16} />
+                </button>
+
+                {showAccountMenu && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowAccountMenu(false)}
+                    />
+                    <div className={dashboardTheme.navigation.accountMenu}>
+                      <button
+                        onClick={() => router.push('/dashboard/settings')}
+                        className={dashboardTheme.navigation.accountMenuItem}
+                      >
+                        <Settings size={18} />
+                        <span>Account Settings</span>
+                      </button>
+                      <button
+                        onClick={() => router.push('/dashboard/company-settings')}
+                        className={dashboardTheme.navigation.accountMenuItem}
+                      >
+                        <Building2 size={18} />
+                        <span>Company Settings</span>
+                      </button>
+                      <div className={dashboardTheme.navigation.accountMenuSeparator}></div>
+                      <button
+                        onClick={handleLogout}
+                        className={dashboardTheme.navigation.accountMenuItemLogout}
+                      >
+                        <LogOut size={18} />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div className={dashboardTheme.mainContent.container}>
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <a
                 href="/dashboard/supplier-profile"
-                className="text-gray-600 hover:text-gray-700 text-sm font-medium"
+                className="text-sm text-secondary-500 hover:text-primary-600 font-medium transition-colors flex items-center gap-1"
               >
+                <Building2 size={14} />
                 Company Profile
               </a>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">📊 Performance Analytics</h1>
-            <p className="text-gray-600">Track your RFQ performance and business growth</p>
+            <h1 className={dashboardTheme.typography.heading1}>AI Performance Analytics</h1>
+            <p className={dashboardTheme.typography.bodyLarge}>Track your RFQ performance and business growth</p>
           </div>
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+            <button className={dashboardTheme.buttons.secondary}>
               <Download className="w-4 h-4" />
               Export Report
             </button>
-            <button 
+            <button
               onClick={() => setLoading(!loading)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className={dashboardTheme.buttons.primary}
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh Data
@@ -630,8 +764,8 @@ const SupplierAnalytics: React.FC = () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8">
+        <div className={dashboardTheme.tabs.container}>
+          <nav className={dashboardTheme.tabs.nav}>
             {[
               { id: 'overview', label: 'Overview', icon: BarChart3 },
               { id: 'performance', label: 'Performance', icon: Target },
@@ -641,11 +775,9 @@ const SupplierAnalytics: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={activeTab === tab.id
+                  ? dashboardTheme.tabs.tabActive
+                  : dashboardTheme.tabs.tab}
               >
                 <tab.icon className="w-4 h-4" />
                 {tab.label}
@@ -655,10 +787,12 @@ const SupplierAnalytics: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'overview' && renderOverviewTab()}
-        {activeTab === 'performance' && renderPerformanceTab()}
-        {activeTab === 'trends' && renderTrendsTab()}
-        {activeTab === 'insights' && renderInsightsTab()}
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {activeTab === 'overview' && renderOverviewTab()}
+          {activeTab === 'performance' && renderPerformanceTab()}
+          {activeTab === 'trends' && renderTrendsTab()}
+          {activeTab === 'insights' && renderInsightsTab()}
+        </div>
       </div>
     </div>
   );

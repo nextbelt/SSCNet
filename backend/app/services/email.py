@@ -32,7 +32,7 @@ class EmailService:
         """
         try:
             message = Mail(
-                from_email=From(self.from_email, "SSCN Platform"),
+                from_email=From(self.from_email, "LinkedProcurement Platform"),
                 to_emails=To(to_email),
                 subject=Subject(f"New RFQ Match: {material}"),
                 html_content=HtmlContent(f"""
@@ -56,7 +56,7 @@ class EmailService:
                         </a>
                     </p>
                     
-                    <p>Best regards,<br>SSCN Team</p>
+                    <p>Best regards,<br>LinkedProcurement Team</p>
                 </div>
                 """)
             )
@@ -81,7 +81,7 @@ class EmailService:
         """
         try:
             message = Mail(
-                from_email=From(self.from_email, "SSCN Platform"),
+                from_email=From(self.from_email, "LinkedProcurement Platform"),
                 to_emails=To(to_email),
                 subject=Subject(f"New Response: {rfq_title}"),
                 html_content=HtmlContent(f"""
@@ -103,7 +103,7 @@ class EmailService:
                         </a>
                     </p>
                     
-                    <p>Best regards,<br>SSCN Team</p>
+                    <p>Best regards,<br>LinkedProcurement Team</p>
                 </div>
                 """)
             )
@@ -126,12 +126,12 @@ class EmailService:
         """
         try:
             message = Mail(
-                from_email=From(self.from_email, "SSCN Platform"),
+                from_email=From(self.from_email, "LinkedProcurement Platform"),
                 to_emails=To(to_email),
-                subject=Subject("Verify Your SSCN Account"),
+                subject=Subject("Verify Your LinkedProcurement Account"),
                 html_content=HtmlContent(f"""
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2>Welcome to SSCN!</h2>
+                    <h2>Welcome to LinkedProcurement!</h2>
                     <p>Hello {user_name},</p>
                     <p>Please verify your email address to complete your registration:</p>
                     
@@ -168,7 +168,7 @@ class EmailService:
         """
         try:
             message = Mail(
-                from_email=From(self.from_email, "SSCN Platform"),
+                from_email=From(self.from_email, "LinkedProcurement Platform"),
                 to_emails=To(to_email),
                 subject=Subject("POC Status Update"),
                 html_content=HtmlContent(f"""
@@ -178,7 +178,7 @@ class EmailService:
                     
                     <p>Check the platform for current availability and response times.</p>
                     
-                    <p>Best regards,<br>SSCN Team</p>
+                    <p>Best regards,<br>LinkedProcurement Team</p>
                 </div>
                 """)
             )
@@ -205,9 +205,9 @@ class EmailService:
             active_conversations = digest_data.get("active_conversations", 0)
             
             message = Mail(
-                from_email=From(self.from_email, "SSCN Platform"),
+                from_email=From(self.from_email, "LinkedProcurement Platform"),
                 to_emails=To(to_email),
-                subject=Subject("Your Weekly SSCN Digest"),
+                subject=Subject("Your Weekly LinkedProcurement Digest"),
                 html_content=HtmlContent(f"""
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <h2>Weekly Activity Summary</h2>
@@ -223,7 +223,7 @@ class EmailService:
                     
                     <p>Stay active to maximize your sourcing opportunities!</p>
                     
-                    <p>Best regards,<br>SSCN Team</p>
+                    <p>Best regards,<br>LinkedProcurement Team</p>
                 </div>
                 """)
             )

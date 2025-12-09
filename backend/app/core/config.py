@@ -5,7 +5,7 @@ from pydantic import validator
 
 class Settings(BaseSettings):
     # Application
-    project_name: str = "Sourcing Supply Chain Net"
+    project_name: str = "LinkedProcurement"
     version: str = "1.0.0"
     app_version: str = "1.0.0"  # Alias for Sentry
     debug: bool = False
@@ -18,8 +18,11 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 30
     
+    # Frontend URL
+    frontend_url: str = "http://localhost:3000"
+    
     # Database
-    database_url: str = "postgresql+asyncpg://postgres:password@localhost:5433/sourcing_supply_chain"
+    database_url: str = "sqlite:///./sscn.db"
     database_url_test: Optional[str] = None
     
     # LinkedIn API (Optional - can be placeholders)
@@ -56,6 +59,11 @@ class Settings(BaseSettings):
     
     # Monitoring
     sentry_dsn: Optional[str] = None
+    
+    # Supabase
+    supabase_url: Optional[str] = None
+    supabase_anon_key: Optional[str] = None
+    supabase_service_role_key: Optional[str] = None
     
     @property
     def SENTRY_DSN(self) -> Optional[str]:

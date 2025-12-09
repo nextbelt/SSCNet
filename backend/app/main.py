@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.core.database import create_tables
 from app.core.sentry_config import init_sentry
-from app.api import auth, rfq, mfa
+from app.api import auth, rfq, mfa, billing
 from app.api import health, data_management
 from app.services.linkedin import linkedin_service
 from app.middleware.security_headers import SecurityHeadersMiddleware
@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI):
     Application lifespan events
     """
     # Startup
-    logger.info("Starting Sourcing Supply Chain Net API")
+    logger.info("Starting LinkedProcurement API")
     
     # Initialize Sentry for error tracking
     init_sentry()
@@ -66,7 +66,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
-    logger.info("Shutting down Sourcing Supply Chain Net API")
+    logger.info("Shutting down LinkedProcurement API")
 
 
 # Create FastAPI app
@@ -92,8 +92,15 @@ async def healthz():
 # 1. CORS middleware - MUST BE FIRST
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins temporarily
-    allow_credentials=False,  # Must be False with wildcard
+    allow_origins=[
+        "http://localhost:2000",
+        "http://127.0.0.1:2000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001"
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
@@ -137,12 +144,25 @@ async def not_found_handler(request: Request, exc: HTTPException):
     )
 
 
-@app.exception_handler(500)
-async def internal_error_handler(request: Request, exc: Exception):
-    logger.error(f"Internal server error: {exc}")
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    import traceback
+    traceback.print_exc()
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal server error"}
+        content={"detail": "Internal server error", "error": str(exc) if settings.debug else None}
+    )
+
+
+@app.exception_handler(500)
+async def internal_error_handler(request: Request, exc: Exception):
+    logger.error(f"Internal server error: {exc}", exc_info=True)
+    import traceback
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "error": str(exc) if settings.debug else None}
     )
 
 
@@ -198,7 +218,7 @@ async def root(request: Request):
     API root endpoint with basic information
     """
     return {
-        "message": "Sourcing Supply Chain Net API",
+        "message": "LinkedProcurement API",
         "version": settings.version,
         "environment": settings.environment,
         "docs_url": "/docs" if settings.debug else "Contact admin for API documentation",
@@ -231,6 +251,7 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(mfa.router, prefix="/api/v1")
 app.include_router(rfq.router, prefix="/api/v1")
 app.include_router(data_management.router, prefix="/api/v1")
+app.include_router(billing.router)
 
 
 # Additional API routes would be included here:
@@ -244,7 +265,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=8000,
+        port=7000,
         reload=settings.debug,
         log_level=settings.log_level.lower()
     )

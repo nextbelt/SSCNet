@@ -15,6 +15,17 @@ class RFQBase(BaseModel):
     preferred_suppliers: Optional[str] = None  # JSON string
     attachments: Optional[str] = None  # JSON string
     visibility: str = "public"  # public, private, invited_only
+    # Enhanced RFQ fields
+    part_number: Optional[str] = None
+    part_number_description: Optional[str] = None
+    delivery_plant: Optional[str] = None
+    yearly_quantity: Optional[str] = None
+    moq_required: Optional[str] = None
+    price_unit: Optional[str] = None  # e.g., "per piece", "per kg"
+    unit_of_measure: Optional[str] = None  # e.g., "kg", "units", "meters"
+    currency: Optional[str] = None  # e.g., "USD", "EUR", "GBP"
+    incoterm: Optional[str] = None  # e.g., "FOB", "CIF", "EXW", "DDP"
+    commodity: Optional[str] = None
 
 
 class RFQCreate(RFQBase):
@@ -35,6 +46,17 @@ class RFQUpdate(BaseModel):
     visibility: Optional[str] = None
     status: Optional[str] = None
     expires_at: Optional[datetime] = None
+    # Enhanced RFQ fields
+    part_number: Optional[str] = None
+    part_number_description: Optional[str] = None
+    delivery_plant: Optional[str] = None
+    yearly_quantity: Optional[str] = None
+    moq_required: Optional[str] = None
+    price_unit: Optional[str] = None
+    unit_of_measure: Optional[str] = None
+    currency: Optional[str] = None
+    incoterm: Optional[str] = None
+    commodity: Optional[str] = None
 
 
 class RFQResponse(RFQBase):
@@ -63,6 +85,11 @@ class RFQList(BaseModel):
     response_count: int
     created_at: datetime
     buyer_company_name: Optional[str] = None
+    # Enhanced fields for list view
+    part_number: Optional[str] = None
+    commodity: Optional[str] = None
+    currency: Optional[str] = None
+    incoterm: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -91,6 +118,14 @@ class RFQResponseBase(BaseModel):
     message: Optional[str] = None
     attachments: Optional[str] = None  # JSON string
     certifications_provided: Optional[str] = None  # JSON string
+    # Enhanced Supplier Response fields
+    supplier_part_number: Optional[str] = None
+    production_batch_size: Optional[str] = None
+    supplier_moq: Optional[str] = None
+    supplier_unit_of_measure: Optional[str] = None  # e.g., "kg", "units", "meters"
+    production_lead_time_days: Optional[int] = None  # Calendar days
+    raw_material_type: Optional[str] = None
+    raw_material_cost: Optional[str] = None  # Currency/kg format
 
 
 class RFQResponseCreate(RFQResponseBase):
@@ -105,6 +140,14 @@ class RFQResponseUpdate(BaseModel):
     attachments: Optional[str] = None
     certifications_provided: Optional[str] = None
     status: Optional[str] = None
+    # Enhanced Supplier Response fields
+    supplier_part_number: Optional[str] = None
+    production_batch_size: Optional[str] = None
+    supplier_moq: Optional[str] = None
+    supplier_unit_of_measure: Optional[str] = None
+    production_lead_time_days: Optional[int] = None
+    raw_material_type: Optional[str] = None
+    raw_material_cost: Optional[str] = None
 
 
 class RFQResponseDetail(RFQResponseBase):

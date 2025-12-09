@@ -2,9 +2,14 @@
 Sentry Configuration for Error Tracking and Monitoring
 SOC 2 Requirement: Real-time error tracking and alerting
 """
-import sentry_sdk
-from sentry_sdk.integrations.fastapi import FastApiIntegration
-from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+except ImportError:
+    sentry_sdk = None
+    print("⚠️ WARNING: sentry-sdk not installed. Error tracking disabled.")
+
 from app.core.config import settings
 
 
@@ -16,6 +21,9 @@ def init_sentry():
     - SENTRY_DSN: Your Sentry project DSN
     - ENVIRONMENT: production, staging, or development
     """
+    if sentry_sdk is None:
+        return
+
     if not settings.SENTRY_DSN:
         print("⚠️ WARNING: SENTRY_DSN not configured. Error tracking disabled.")
         return
@@ -104,6 +112,9 @@ def capture_security_event(event_type: str, user_id: int = None, details: dict =
         user_id: Optional user ID involved
         details: Additional context
     """
+    if sentry_sdk is None:
+        return
+
     with sentry_sdk.configure_scope() as scope:
         scope.set_tag("security_event", True)
         scope.set_level("warning")
@@ -129,6 +140,9 @@ def capture_compliance_violation(violation_type: str, details: dict):
         violation_type: Type of violation
         details: Violation details
     """
+    if sentry_sdk is None:
+        return
+
     with sentry_sdk.configure_scope() as scope:
         scope.set_tag("compliance_violation", True)
         scope.set_level("error")

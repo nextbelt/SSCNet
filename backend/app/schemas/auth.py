@@ -18,6 +18,7 @@ class UserResponse(BaseModel):
     id: str
     email: str
     name: str
+    user_type: Optional[str] = None
     profile_picture_url: Optional[str] = None
     linkedin_profile_url: Optional[str] = None
     is_verified: bool

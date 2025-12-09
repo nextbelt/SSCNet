@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import Link from 'next/link'
+import { ArrowRight, CheckCircle, BarChart3, ShieldCheck, Zap } from 'lucide-react'
 
 export default function Home() {
   const [stats] = useState({
@@ -9,145 +11,130 @@ export default function Home() {
   })
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-secondary-50">
       {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200">
+      <nav className="fixed top-0 w-full z-50 glass border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <h1 className="text-xl font-bold text-gradient">SSCN</h1>
+          <div className="flex justify-between h-16 items-center">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center shadow-lg shadow-primary-500/20">
+                <span className="text-white font-bold text-sm">LP</span>
               </div>
+              <h1 className="text-xl font-bold text-secondary-900 tracking-tight">
+                LinkedProcurement
+              </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <a href="/auth/login" className="text-gray-500 hover:text-gray-700">
+            <div className="hidden md:flex items-center space-x-8">
+              <Link href="/pricing" className="text-secondary-600 hover:text-primary-600 transition-colors font-medium">
+                Pricing
+              </Link>
+              <Link href="/auth/login" className="text-secondary-600 hover:text-primary-600 transition-colors font-medium">
                 Sign in
-              </a>
-              <a href="/auth/register" className="btn-primary">
+              </Link>
+              <Link href="/auth/register" className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg shadow-primary-600/20 transition-all hover:scale-105 font-medium">
                 Get Started
-              </a>
+              </Link>
             </div>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto">
-          <div className="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
-            <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
-              <div className="sm:text-center lg:text-left">
-                <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-                  <span className="block xl:inline">B2B Supply Chain</span>{' '}
-                  <span className="block text-gradient xl:inline">Sourcing Platform</span>
-                </h1>
-                <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                  Connect with verified suppliers through LinkedIn-authenticated points of contact. 
-                  Streamline your sourcing process with real-time RFQ management and AI-powered matching.
-                </p>
-                
-                {/* Buyer Section */}
-                <div className="mt-8">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4">For Buyers:</h2>
-                  <div className="flex gap-3 mb-6">
-                    <div className="rounded-md shadow">
-                      <a href="/dashboard/post-rfq" className="btn-primary btn-lg">
-                        📝 Post Requirements →
-                      </a>
-                    </div>
-                    <div>
-                      <a href="/dashboard/buyer" className="btn-secondary btn-lg">
-                        🔍 Find Suppliers
-                      </a>
-                    </div>
-                  </div>
-                </div>
+      <div className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden">
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-200/30 rounded-full blur-3xl opacity-50 animate-pulse" />
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent-200/30 rounded-full blur-3xl opacity-50" />
+        </div>
 
-                {/* Supplier Section */}
-                <div className="mt-6">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4">For Suppliers:</h2>
-                  <div className="rounded-md shadow">
-                    <a href="/dashboard/supplier" className="btn-primary btn-lg bg-green-600 hover:bg-green-700">
-                      🎯 Browse RFQ Opportunities →
-                    </a>
-                  </div>
-                </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 border border-white/50 backdrop-blur-sm mb-8 shadow-sm">
+            <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+            <span className="text-sm font-medium text-secondary-600">AI-Powered Supply Chain Intelligence</span>
+          </div>
+
+          <h1 className="text-5xl md:text-7xl font-display font-bold text-secondary-900 mb-6 tracking-tight leading-tight">
+            Sourcing Intelligence <br />
+            <span className="text-gradient">Reimagined for Growth</span>
+          </h1>
+
+          <p className="mt-6 text-xl text-secondary-500 max-w-2xl mx-auto leading-relaxed">
+            Connect with verified partners through AI-driven insights.
+            Streamline your procurement process with real-time collaboration and smart matching.
+          </p>
+
+          <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
+            <Link href="/auth/register" className="px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-xl shadow-primary-600/20 transition-all hover:scale-105 font-semibold text-lg flex items-center justify-center gap-2">
+              Start Free Trial <ArrowRight className="w-5 h-5" />
+            </Link>
+            <Link href="/pricing" className="px-8 py-4 bg-white hover:bg-secondary-50 text-secondary-900 border border-secondary-200 rounded-full shadow-sm transition-all hover:scale-105 font-semibold text-lg">
+              View Pricing
+            </Link>
+          </div>
+
+          {/* Feature Cards */}
+          <div className="mt-20 grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div className="group p-8 bg-white/60 backdrop-blur-xl border border-white/50 rounded-3xl shadow-glass hover:shadow-glass-sm transition-all hover:-translate-y-1">
+              <div className="w-12 h-12 bg-primary-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Zap className="w-6 h-6 text-primary-600" />
               </div>
-            </main>
+              <h3 className="text-2xl font-bold text-secondary-900 mb-3">For Buyers</h3>
+              <p className="text-secondary-500 mb-6">Instantly discover verified suppliers with our AI matching engine.</p>
+              <Link href="/dashboard/post-rfq" className="text-primary-600 font-semibold flex items-center gap-2 group-hover:gap-3 transition-all">
+                Post Requirements <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            <div className="group p-8 bg-white/60 backdrop-blur-xl border border-white/50 rounded-3xl shadow-glass hover:shadow-glass-sm transition-all hover:-translate-y-1">
+              <div className="w-12 h-12 bg-accent-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <BarChart3 className="w-6 h-6 text-accent-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-secondary-900 mb-3">For Suppliers</h3>
+              <p className="text-secondary-500 mb-6">Access high-value RFQs and grow your business with smart insights.</p>
+              <Link href="/dashboard/supplier" className="text-accent-600 font-semibold flex items-center gap-2 group-hover:gap-3 transition-all">
+                Browse Opportunities <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Stats Section */}
-      <div className="bg-blue-700" style={{backgroundColor: 'var(--primary-700)'}}>
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:py-16 sm:px-6 lg:px-8 lg:py-20">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-              Trusted by Industry Leaders
-            </h2>
-            <p className="mt-3 text-xl text-blue-200 sm:mt-4">
-              Join thousands of companies streamlining their supply chain operations
-            </p>
+      <div className="py-24 bg-white relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { label: "Verified Companies", value: stats.companies },
+              { label: "RFQs Processed", value: stats.rfqs },
+              { label: "Verified POCs", value: stats.verified_pocs },
+              { label: "Avg Response Time", value: stats.avg_response_time },
+            ].map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="text-4xl md:text-5xl font-bold text-secondary-900 mb-2 tracking-tight">
+                  {stat.value}
+                </div>
+                <div className="text-secondary-500 font-medium">{stat.label}</div>
+              </div>
+            ))}
           </div>
-          <dl className="mt-10 text-center sm:max-w-3xl sm:mx-auto sm:grid sm:grid-cols-4 sm:gap-8">
-            <div className="flex flex-col">
-              <dt className="order-2 mt-2 text-lg leading-6 font-medium text-blue-200">
-                Verified Companies
-              </dt>
-              <dd className="order-1 text-5xl font-extrabold text-white">
-                {stats.companies}
-              </dd>
-            </div>
-            <div className="flex flex-col mt-10 sm:mt-0">
-              <dt className="order-2 mt-2 text-lg leading-6 font-medium text-blue-200">
-                RFQs Processed
-              </dt>
-              <dd className="order-1 text-5xl font-extrabold text-white">
-                {stats.rfqs}
-              </dd>
-            </div>
-            <div className="flex flex-col mt-10 sm:mt-0">
-              <dt className="order-2 mt-2 text-lg leading-6 font-medium text-blue-200">
-                Verified POCs
-              </dt>
-              <dd className="order-1 text-5xl font-extrabold text-white">
-                {stats.verified_pocs}
-              </dd>
-            </div>
-            <div className="flex flex-col mt-10 sm:mt-0">
-              <dt className="order-2 mt-2 text-lg leading-6 font-medium text-blue-200">
-                Avg Response Time
-              </dt>
-              <dd className="order-1 text-5xl font-extrabold text-white">
-                {stats.avg_response_time}
-              </dd>
-            </div>
-          </dl>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200">
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h3 className="text-xl font-bold text-gradient">SSCN</h3>
-            <p className="mt-2 text-gray-500">
-              Sourcing Supply Chain Net - Connecting verified suppliers worldwide
-            </p>
-            <div className="mt-4 space-x-6">
-              <a href="/privacy" className="text-gray-400 hover:text-gray-500">
-                Privacy Policy
-              </a>
-              <a href="/terms" className="text-gray-400 hover:text-gray-500">
-                Terms of Service
-              </a>
-              <a href="/contact" className="text-gray-400 hover:text-gray-500">
-                Contact
-              </a>
+      <footer className="bg-secondary-50 border-t border-secondary-200 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-gradient-to-br from-primary-500 to-primary-600 rounded-md flex items-center justify-center">
+              <span className="text-white font-bold text-xs">LP</span>
             </div>
-            <p className="mt-4 text-sm text-gray-400">
-              © 2024 Sourcing Supply Chain Net. All rights reserved.
-            </p>
+            <span className="font-bold text-secondary-900">LinkedProcurement</span>
+          </div>
+          <div className="flex gap-8 text-sm text-secondary-500">
+            <Link href="/privacy" className="hover:text-primary-600 transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-primary-600 transition-colors">Terms</Link>
+            <Link href="/contact" className="hover:text-primary-600 transition-colors">Contact</Link>
+          </div>
+          <div className="text-sm text-secondary-400">
+            © 2025 LinkedProcurement.
           </div>
         </div>
       </footer>

@@ -65,7 +65,7 @@ class MFAService:
         return False, None
     
     @staticmethod
-    def generate_qr_code(secret: str, user_email: str, issuer: str = "SSCN") -> str:
+    def generate_qr_code(secret: str, user_email: str, issuer: str = "LinkedProcurement") -> str:
         """
         Generate QR code for TOTP setup
         Returns base64-encoded PNG image

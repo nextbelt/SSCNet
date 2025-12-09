@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Boolean, Text, Integer, ForeignKey
+from sqlalchemy import Column, String, DateTime, Boolean, Text, Integer, ForeignKey, Numeric
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -42,6 +42,7 @@ class User(Base):
     sent_rfqs = relationship("RFQ", back_populates="buyer", foreign_keys="RFQ.buyer_id")
     sent_messages = relationship("Message", back_populates="sender", foreign_keys="Message.sender_id")
     received_messages = relationship("Message", back_populates="recipient", foreign_keys="Message.recipient_id")
+    subscription = relationship("Subscription", back_populates="user", uselist=False)
 
 
 class Company(Base):
@@ -62,6 +63,11 @@ class Company(Base):
     description = Column(Text, nullable=True)
     logo_url = Column(Text, nullable=True)
     website_url = Column(Text, nullable=True)
+    
+    # Company type and business focus
+    company_type = Column(String(100), nullable=True)  # manufacturer, distributor, service_provider, both
+    business_categories = Column(Text, nullable=True)  # JSON array of categories supplier focuses on
+    raw_materials_focus = Column(Text, nullable=True)  # JSON array of raw materials company works with
     
     # Business verification
     duns_number = Column(String(50), nullable=True)
@@ -135,6 +141,18 @@ class RFQ(Base):
     delivery_deadline = Column(DateTime, nullable=True)
     delivery_location = Column(String(500), nullable=True)
     
+    # Enhanced RFQ fields (Buyer requirements)
+    part_number = Column(String(100), nullable=True, index=True)
+    part_number_description = Column(Text, nullable=True)
+    delivery_plant = Column(String(255), nullable=True)
+    yearly_quantity = Column(String(100), nullable=True)
+    moq_required = Column(String(100), nullable=True)
+    price_unit = Column(String(50), nullable=True)  # e.g., "per piece", "per kg"
+    unit_of_measure = Column(String(50), nullable=True)  # e.g., "kg", "units", "meters"
+    currency = Column(String(10), nullable=True)  # e.g., "USD", "EUR", "GBP"
+    incoterm = Column(String(20), nullable=True)  # e.g., "FOB", "CIF", "EXW", "DDP"
+    commodity = Column(String(255), nullable=True, index=True)
+    
     # Requirements (stored as JSON)
     required_certifications = Column(Text, nullable=True)  # JSON string
     preferred_suppliers = Column(Text, nullable=True)  # JSON string
@@ -174,6 +192,15 @@ class RFQResponse(Base):
     lead_time_days = Column(Integer, nullable=True)
     minimum_order_quantity = Column(String(255), nullable=True)
     message = Column(Text, nullable=True)
+    
+    # Enhanced Supplier Response fields
+    supplier_part_number = Column(String(100), nullable=True)
+    production_batch_size = Column(String(100), nullable=True)
+    supplier_moq = Column(String(100), nullable=True)
+    supplier_unit_of_measure = Column(String(50), nullable=True)  # e.g., "kg", "units", "meters"
+    production_lead_time_days = Column(Integer, nullable=True)  # Calendar days
+    raw_material_type = Column(String(255), nullable=True)
+    raw_material_cost = Column(String(100), nullable=True)  # Currency/kg format
     
     # Attachments and additional info
     attachments = Column(Text, nullable=True)  # JSON string of file URLs
@@ -218,3 +245,83 @@ class Message(Base):
     rfq = relationship("RFQ", back_populates="messages")
     sender = relationship("User", back_populates="sent_messages", foreign_keys=[sender_id])
     recipient = relationship("User", back_populates="received_messages", foreign_keys=[recipient_id])
+
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, unique=True, index=True)
+    
+    # Subscription details
+    tier = Column(String(50), default="free", nullable=False, index=True)  # free, pro, premium
+    status = Column(String(50), default="active", nullable=False, index=True)  # active, cancelled, past_due, paused
+    billing_cycle = Column(String(50), default="monthly")  # monthly, annual
+    
+    # Pricing
+    price_amount = Column(Numeric(10, 2), nullable=True)  # Amount in USD
+    currency = Column(String(10), default="USD")
+    
+    # Stripe integration
+    stripe_customer_id = Column(String(255), nullable=True, unique=True, index=True)
+    stripe_subscription_id = Column(String(255), nullable=True, unique=True, index=True)
+    stripe_payment_method_id = Column(String(255), nullable=True)
+    
+    # Billing dates
+    current_period_start = Column(DateTime, nullable=True)
+    current_period_end = Column(DateTime, nullable=True)
+    trial_start = Column(DateTime, nullable=True)
+    trial_end = Column(DateTime, nullable=True)
+    cancelled_at = Column(DateTime, nullable=True)
+    
+    # Usage limits (reset monthly)
+    rfq_limit = Column(Integer, nullable=True)  # null = unlimited
+    rfqs_posted_this_month = Column(Integer, default=0)
+    response_limit = Column(Integer, nullable=True)  # null = unlimited
+    responses_sent_this_month = Column(Integer, default=0)
+    
+    # Features (JSON string for flexibility)
+    features_enabled = Column(Text, nullable=True)  # JSON: analytics, priority_support, custom_branding, etc.
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User", back_populates="subscription")
+    invoices = relationship("Invoice", back_populates="subscription")
+
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    subscription_id = Column(UUID(as_uuid=True), ForeignKey("subscriptions.id"), nullable=False, index=True)
+    
+    # Invoice details
+    invoice_number = Column(String(100), unique=True, nullable=False, index=True)
+    amount = Column(Numeric(10, 2), nullable=False)
+    currency = Column(String(10), default="USD")
+    status = Column(String(50), default="pending", nullable=False)  # pending, paid, failed, refunded
+    
+    # Stripe integration
+    stripe_invoice_id = Column(String(255), nullable=True, unique=True)
+    stripe_payment_intent_id = Column(String(255), nullable=True)
+    
+    # Billing period
+    period_start = Column(DateTime, nullable=False)
+    period_end = Column(DateTime, nullable=False)
+    
+    # Payment details
+    paid_at = Column(DateTime, nullable=True)
+    payment_method = Column(String(100), nullable=True)  # card, bank_transfer, etc.
+    
+    # Invoice files
+    invoice_pdf_url = Column(Text, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    subscription = relationship("Subscription", back_populates="invoices")

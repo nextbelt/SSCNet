@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
 import uuid
+import os
+import base64
 
 from app.core.database import get_db
 from app.core.security import (
@@ -425,23 +427,192 @@ async def get_current_user_info(
     """
     Get current authenticated user information
     """
-    user = get_current_user(db, credentials.credentials)
-    if not user:
+    # Verify token
+    token_data = verify_token(credentials.credentials)
+    if not token_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials"
         )
     
+    # Get user from database
+    user = db.query(User).filter(User.id == token_data.sub).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+    
+    # Get POC to retrieve user_type
+    poc = db.query(POC).filter(POC.user_id == user.id).first()
+    user_type = "buyer"  # Default
+    if poc:
+        # Determine user_type from POC role
+        user_type = "buyer" if "procurement" in poc.role.lower() else "supplier"
+    
     return UserResponse(
         id=str(user.id),
         email=user.email,
         name=user.name,
+        user_type=user_type,
         profile_picture_url=user.profile_picture_url,
         linkedin_profile_url=user.linkedin_profile_url,
         is_verified=user.is_verified,
         verification_status=user.verification_status,
         created_at=user.created_at
     )
+
+
+@router.patch("/profile", response_model=UserResponse)
+async def update_user_profile(
+    profile_data: dict,
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """
+    Update current user's profile information
+    """
+    # Verify token
+    token_data = verify_token(credentials.credentials)
+    if not token_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials"
+        )
+    
+    # Get user from database
+    user = db.query(User).filter(User.id == token_data.sub).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+    
+    # Extract and sanitize allowed fields
+    allowed_fields = ["name", "profile_picture_url"]
+    update_data = {k: v for k, v in profile_data.items() if k in allowed_fields}
+    
+    if not update_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No valid fields to update"
+        )
+    
+    # Sanitize user data
+    if "name" in update_data:
+        sanitized = sanitize_user_data({"name": update_data["name"]})
+        update_data["name"] = sanitized.get("name", update_data["name"])
+    
+    # Update user fields
+    for field, value in update_data.items():
+        setattr(user, field, value)
+    
+    db.commit()
+    db.refresh(user)
+    
+    # Audit log
+    audit_service.log_action(
+        db=db,
+        user_id=user.id,
+        action="user.profile.update",
+        status="success",
+        resource_type="user",
+        resource_id=str(user.id),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        status_code=200,
+        details={"updated_fields": list(update_data.keys())}
+    )
+    
+    # Get POC to retrieve user_type
+    poc = db.query(POC).filter(POC.user_id == user.id).first()
+    user_type = "buyer"  # Default
+    if poc:
+        # Determine user_type from POC role
+        user_type = "buyer" if "procurement" in poc.role.lower() else "supplier"
+    
+    return UserResponse(
+        id=str(user.id),
+        email=user.email,
+        name=user.name,
+        user_type=user_type,
+        profile_picture_url=user.profile_picture_url,
+        linkedin_profile_url=user.linkedin_profile_url,
+        is_verified=user.is_verified,
+        verification_status=user.verification_status,
+        created_at=user.created_at
+    )
+
+
+@router.post("/upload-profile-picture")
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    request: Request = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """
+    Upload profile picture (converts to base64 data URL for now)
+    In production, this should upload to S3/cloud storage
+    """
+    # Verify token
+    token_data = verify_token(credentials.credentials)
+    if not token_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials"
+        )
+    
+    # Get user
+    user = db.query(User).filter(User.id == token_data.sub).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+    
+    # Validate file type
+    if not file.content_type.startswith('image/'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be an image"
+        )
+    
+    # Read file content
+    content = await file.read()
+    
+    # Validate file size (max 5MB)
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image must be less than 5MB"
+        )
+    
+    # Convert to base64 data URL
+    base64_image = base64.b64encode(content).decode('utf-8')
+    data_url = f"data:{file.content_type};base64,{base64_image}"
+    
+    # Update user profile picture
+    user.profile_picture_url = data_url
+    db.commit()
+    
+    # Audit log
+    if request:
+        audit_service.log_action(
+            db=db,
+            user_id=user.id,
+            action="user.profile_picture.upload",
+            status="success",
+            resource_type="user",
+            resource_id=str(user.id),
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            status_code=200,
+            details={"file_type": file.content_type, "file_size": len(content)}
+        )
+    
+    return {"profile_picture_url": data_url}
 
 
 @router.post("/verify-email")

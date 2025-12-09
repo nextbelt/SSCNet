@@ -10,7 +10,7 @@ export default function PrivacyPolicy() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-3">1. Introduction</h2>
               <p>
-                Sourcing Supply Chain Net ("SSCN", "we", "our", or "us") is committed to protecting your privacy. 
+                LinkedProcurement ("LP", "we", "our", or "us") is committed to protecting your privacy. 
                 This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you 
                 use our B2B supply chain sourcing platform.
               </p>
@@ -133,7 +133,7 @@ export default function PrivacyPolicy() {
                 If you have questions about this Privacy Policy or wish to exercise your rights, please contact us at:
               </p>
               <div className="mt-3 bg-gray-50 p-4 rounded">
-                <p><strong>Email:</strong> privacy@sscn.com</p>
+                <p><strong>Email:</strong> privacy@linkedprocurement.com</p>
                 <p><strong>Address:</strong> [Your Company Address]</p>
               </div>
             </section>
@@ -143,13 +143,13 @@ export default function PrivacyPolicy() {
               <p>
                 We comply with the General Data Protection Regulation (GDPR) and California Consumer Privacy Act (CCPA). 
                 For specific requests under these regulations, please contact our Data Protection Officer at 
-                dpo@sscn.com.
+                dpo@linkedprocurement.com.
               </p>
             </section>
           </div>
 
           <div className="mt-8 pt-6 border-t">
-            <a href="/" className="text-blue-600 hover:text-blue-700">
+            <a href="/" className="text-[#0071e3] hover:text-[#0077ed]">
               ← Back to Home
             </a>
           </div>

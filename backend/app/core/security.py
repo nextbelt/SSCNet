@@ -7,12 +7,20 @@ from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import re
+import httpx
+import os
 
 from app.core.config import settings
-from app.models.user import User
 from app.schemas.token import TokenPayload
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+security = HTTPBearer()
+
+# Supabase configuration
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://hiawkadkxazmelnmeeto.supabase.co")
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "")  # Optional: for local JWT verification
+
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 security = HTTPBearer()
 
 
@@ -107,17 +115,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     """
     Hash a password
-    Bcrypt has a 72-byte limit, so truncate if needed
     """
-    # Truncate to 72 bytes to avoid bcrypt error
-    if len(password.encode('utf-8')) > 72:
-        password = password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
     return pwd_context.hash(password)
 
 
 def verify_token(token: str) -> Optional[TokenPayload]:
     """
-    Verify and decode a JWT token
+    Verify and decode a JWT token (legacy local tokens)
     """
     try:
         payload = jwt.decode(
@@ -129,49 +133,92 @@ def verify_token(token: str) -> Optional[TokenPayload]:
     return token_data
 
 
-def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
+async def verify_supabase_token(token: str) -> Optional[dict]:
     """
-    Authenticate a user by email and password
+    Verify a Supabase JWT token by calling Supabase auth API
+    Returns user data if valid, None if invalid
     """
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{SUPABASE_URL}/auth/v1/user",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "apikey": os.getenv("SUPABASE_ANON_KEY", "")
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            return None
+    except Exception as e:
+        print(f"Supabase token verification error: {e}")
+        return None
+
+
+def verify_supabase_token_sync(token: str) -> Optional[dict]:
+    """
+    Synchronous version of Supabase token verification
+    """
+    try:
+        with httpx.Client() as client:
+            response = client.get(
+                f"{SUPABASE_URL}/auth/v1/user",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "apikey": os.getenv("SUPABASE_ANON_KEY", "")
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            return None
+    except Exception as e:
+        print(f"Supabase token verification error: {e}")
+        return None
+
+
+def authenticate_user(db: Session, email: str, password: str) -> Optional[Any]:
+    """
+    Authenticate a user by email and password (legacy - use Supabase Auth instead)
+    """
+    from app.models.user import User
     user = db.query(User).filter(User.email == email).first()
     if not user:
+        return None
+    if not user.hashed_password:
         return None
     if not verify_password(password, user.hashed_password):
         return None
     return user
 
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(lambda: __import__('app.core.database', fromlist=['get_db']).get_db())
-) -> User:
+def get_current_user_from_supabase(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> dict:
     """
-    Get current user from JWT token
-    FastAPI dependency for authentication
+    Get current user from Supabase JWT token
+    Returns Supabase user dict with id, email, user_metadata
     """
     token = credentials.credentials
-    token_data = verify_token(token)
+    user_data = verify_supabase_token_sync(token)
     
-    if token_data is None:
+    if user_data is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user = db.query(User).filter(User.id == token_data.sub).first()
-    
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Inactive user"
-        )
-    
-    return user
+    return user_data
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> dict:
+    """
+    Get current user - uses Supabase authentication
+    FastAPI dependency for authentication
+    Returns user dict from Supabase
+    """
+    return get_current_user_from_supabase(credentials)
