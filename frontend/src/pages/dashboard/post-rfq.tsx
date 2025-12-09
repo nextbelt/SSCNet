@@ -18,6 +18,15 @@ interface MyRFQ {
   delivery_deadline?: string;
 }
 
+interface LineItem {
+  id: string;
+  part_number: string;
+  description: string;
+  quantity: string;
+  uom: string;
+  target_price?: string;
+}
+
 interface SupplierResponse {
   id: string;
   supplier_company_name: string;
@@ -72,6 +81,19 @@ const PostRFQPlatform = () => {
   const [viewingSupplierProfile, setViewingSupplierProfile] = useState<CompanyProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [lineItems, setLineItems] = useState<LineItem[]>([
+    { id: '1', part_number: '', description: '', quantity: '', uom: '', target_price: '' }
+  ]);
+  const [rfqSettings, setRfqSettings] = useState({
+    is_sealed_bid: false,
+    requires_nda: false,
+    partial_bidding_allowed: true
+  });
+  const [responseViewMode, setResponseViewMode] = useState<'cards' | 'table' | 'qa'>('cards');
+  const [qaMessages, setQaMessages] = useState([
+    { id: 1, user: 'TechCorp Industries', message: 'Is the delivery deadline flexible by 1-2 weeks?', type: 'question', timestamp: '2 hours ago', replies: [] },
+    { id: 2, user: 'You', message: 'We can extend up to 5 days, but no more due to production schedule.', type: 'answer', timestamp: '1 hour ago', replies: [] }
+  ]);
   const [formData, setFormData] = useState({
     title: '',
     material_category: '',
@@ -92,7 +114,11 @@ const PostRFQPlatform = () => {
     unit_of_measure: '',
     currency: '',
     incoterm: '',
-    commodity: ''
+    commodity: '',
+    payment_terms: '',
+    contract_duration: '',
+    alternative_parts_allowed: false,
+    inspection_requirements: ''
   });
 
   const handleLogout = () => {
@@ -121,6 +147,27 @@ const PostRFQPlatform = () => {
   const unitOfMeasureOptions = ['kg', 'g', 'lb', 'oz', 'units', 'pieces', 'meters', 'feet', 'liters', 'gallons', 'sheets', 'rolls'];
   
   const priceUnitOptions = ['per piece', 'per kg', 'per lb', 'per unit', 'per meter', 'per foot', 'per liter', 'per sheet', 'per roll', 'per 1000 pieces'];
+
+  const addLineItem = () => {
+    setLineItems([...lineItems, { 
+      id: Math.random().toString(36).substr(2, 9), 
+      part_number: '', description: '', quantity: '', uom: '', target_price: '' 
+    }]);
+  };
+
+  const removeLineItem = (index: number) => {
+    if (lineItems.length > 1) {
+      const newItems = [...lineItems];
+      newItems.splice(index, 1);
+      setLineItems(newItems);
+    }
+  };
+
+  const updateLineItem = (index: number, field: keyof LineItem, value: string) => {
+    const newItems = [...lineItems];
+    newItems[index] = { ...newItems[index], [field]: value };
+    setLineItems(newItems);
+  };
 
   useEffect(() => {
     if (activeView === 'post-rfq') {
@@ -189,7 +236,13 @@ const PostRFQPlatform = () => {
         unit_of_measure: formData.unit_of_measure || undefined,
         currency: formData.currency || undefined,
         incoterm: formData.incoterm || undefined,
-        commodity: formData.commodity || undefined
+        commodity: formData.commodity || undefined,
+        payment_terms: formData.payment_terms || undefined,
+        contract_duration: formData.contract_duration || undefined,
+        alternative_parts_allowed: formData.alternative_parts_allowed,
+        inspection_requirements: formData.inspection_requirements || undefined,
+        line_items: lineItems,
+        settings: rfqSettings
       };
 
       const response = await axios.post('/api/rfqs', rfqData, {
@@ -219,8 +272,14 @@ const PostRFQPlatform = () => {
           unit_of_measure: '',
           currency: '',
           incoterm: '',
-          commodity: ''
+          commodity: '',
+          payment_terms: '',
+          contract_duration: '',
+          alternative_parts_allowed: false,
+          inspection_requirements: ''
         });
+        setLineItems([{ id: '1', part_number: '', description: '', quantity: '', uom: '', target_price: '' }]);
+        setRfqSettings({ is_sealed_bid: false, requires_nda: false, partial_bidding_allowed: true });
         loadMyRFQs();
       }
     } catch (error) {
@@ -267,17 +326,17 @@ const PostRFQPlatform = () => {
           <h1 className={dashboardTheme.typography.heading2}>Post Your Requirements</h1>
           <p className={dashboardTheme.typography.bodyLarge + " mb-8"}>Let verified suppliers come to you with competitive quotes</p>
           <div className="grid grid-cols-3 gap-6">
-            <div className="bg-white/60 backdrop-blur-md rounded-xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all">
+            <div className="p-6 transition-all border shadow-sm bg-white/60 backdrop-blur-md rounded-xl border-white/50 hover:shadow-md">
               <div className="text-3xl font-bold text-secondary-900">95%</div>
-              <div className="text-sm text-secondary-500 mt-1 font-medium">Average Response Rate</div>
+              <div className="mt-1 text-sm font-medium text-secondary-500">Average Response Rate</div>
             </div>
-            <div className="bg-white/60 backdrop-blur-md rounded-xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all">
+            <div className="p-6 transition-all border shadow-sm bg-white/60 backdrop-blur-md rounded-xl border-white/50 hover:shadow-md">
               <div className="text-3xl font-bold text-secondary-900">8-12</div>
-              <div className="text-sm text-secondary-500 mt-1 font-medium">Avg Quotes Received</div>
+              <div className="mt-1 text-sm font-medium text-secondary-500">Avg Quotes Received</div>
             </div>
-            <div className="bg-white/60 backdrop-blur-md rounded-xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all">
+            <div className="p-6 transition-all border shadow-sm bg-white/60 backdrop-blur-md rounded-xl border-white/50 hover:shadow-md">
               <div className="text-3xl font-bold text-secondary-900">24h</div>
-              <div className="text-sm text-secondary-500 mt-1 font-medium">First Response Time</div>
+              <div className="mt-1 text-sm font-medium text-secondary-500">First Response Time</div>
             </div>
           </div>
         </div>
@@ -302,7 +361,7 @@ const PostRFQPlatform = () => {
             />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid gap-6 md:grid-cols-2">
             <div>
               <label className={dashboardTheme.forms.label}>
                 Material/Product Category *
@@ -334,7 +393,7 @@ const PostRFQPlatform = () => {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid gap-6 md:grid-cols-2">
             <div>
               <label className={dashboardTheme.forms.label}>
                 Target Price Range
@@ -349,7 +408,7 @@ const PostRFQPlatform = () => {
             </div>
             <div>
               <label className={dashboardTheme.forms.label}>
-                Required Delivery Date
+                Delivery Deadline
               </label>
               <input
                 type="date"
@@ -360,56 +419,80 @@ const PostRFQPlatform = () => {
             </div>
           </div>
 
-          {/* Enhanced RFQ Fields Section */}
-          <div className="border-t border-secondary-200 pt-6 mt-6">
-            <h3 className={dashboardTheme.typography.heading4 + " mb-4"}>Part Details</h3>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className={dashboardTheme.forms.label}>
-                  Part Number
-                </label>
-                <input
-                  type="text"
-                  value={formData.part_number}
-                  onChange={(e) => setFormData(prev => ({ ...prev, part_number: e.target.value }))}
-                  placeholder="e.g., PN-12345-A"
-                  className={dashboardTheme.forms.input}
-                />
-              </div>
-              <div>
-                <label className={dashboardTheme.forms.label}>
-                  Commodity
-                </label>
-                <input
-                  type="text"
-                  value={formData.commodity}
-                  onChange={(e) => setFormData(prev => ({ ...prev, commodity: e.target.value }))}
-                  placeholder="e.g., Steel Fasteners, Electronic Components"
-                  className={dashboardTheme.forms.input}
-                />
-              </div>
+          {/* Enhanced RFQ Fields Section - Replaced with Line Items */}
+          <div className="pt-6 mt-6 border-t border-secondary-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={dashboardTheme.typography.heading4}>Line Items</h3>
+              <button type="button" onClick={addLineItem} className="flex items-center gap-1 px-3 py-1 text-sm font-semibold transition-colors rounded-lg text-primary-600 hover:bg-primary-50">
+                <Package size={16} /> Add Item
+              </button>
             </div>
-
-            <div className="mt-4">
-              <label className={dashboardTheme.forms.label}>
-                Part Number Description
-              </label>
-              <textarea
-                rows={2}
-                value={formData.part_number_description}
-                onChange={(e) => setFormData(prev => ({ ...prev, part_number_description: e.target.value }))}
-                placeholder="Detailed description of the part requirements"
-                className={dashboardTheme.forms.textarea}
-              ></textarea>
+            
+            <div className="space-y-4">
+              {lineItems.map((item, index) => (
+                <div key={item.id} className="relative p-4 transition-colors bg-white border shadow-sm rounded-xl border-secondary-200 group hover:border-primary-200">
+                  <div className="absolute transition-opacity opacity-0 top-2 right-2 group-hover:opacity-100">
+                     <button type="button" onClick={() => removeLineItem(index)} className="p-1 text-red-500 rounded hover:text-red-700 hover:bg-red-50"><X size={16}/></button>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-12">
+                     <div className="md:col-span-3">
+                       <label className="block mb-1 text-xs font-medium text-secondary-500">Part Number</label>
+                       <input 
+                         placeholder="e.g. PN-123" 
+                         value={item.part_number}
+                         onChange={(e) => updateLineItem(index, 'part_number', e.target.value)}
+                         className={dashboardTheme.forms.input + " text-sm"} 
+                       />
+                     </div>
+                     <div className="md:col-span-4">
+                       <label className="block mb-1 text-xs font-medium text-secondary-500">Description</label>
+                       <input 
+                         placeholder="Description" 
+                         value={item.description}
+                         onChange={(e) => updateLineItem(index, 'description', e.target.value)}
+                         className={dashboardTheme.forms.input + " text-sm"} 
+                       />
+                     </div>
+                     <div className="md:col-span-2">
+                       <label className="block mb-1 text-xs font-medium text-secondary-500">Quantity</label>
+                       <input 
+                         placeholder="Qty" 
+                         value={item.quantity}
+                         onChange={(e) => updateLineItem(index, 'quantity', e.target.value)}
+                         className={dashboardTheme.forms.input + " text-sm"} 
+                       />
+                     </div>
+                     <div className="md:col-span-2">
+                       <label className="block mb-1 text-xs font-medium text-secondary-500">UOM</label>
+                       <select
+                          value={item.uom}
+                          onChange={(e) => updateLineItem(index, 'uom', e.target.value)}
+                          className={dashboardTheme.forms.select + " text-sm py-2"}
+                        >
+                          <option value="">Unit</option>
+                          {unitOfMeasureOptions.map(u => <option key={u} value={u}>{u}</option>)}
+                        </select>
+                     </div>
+                     <div className="md:col-span-1">
+                        <label className="block mb-1 text-xs font-medium text-secondary-500">Target</label>
+                        <input 
+                          placeholder="$" 
+                          value={item.target_price}
+                          onChange={(e) => updateLineItem(index, 'target_price', e.target.value)}
+                          className={dashboardTheme.forms.input + " text-sm"} 
+                        />
+                     </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Quantity & Pricing Section */}
-          <div className="border-t border-secondary-200 pt-6">
-            <h3 className={dashboardTheme.typography.heading4 + " mb-4"}>Quantity & Pricing</h3>
+          <div className="pt-6 border-t border-secondary-200">
+            <h3 className={dashboardTheme.typography.heading4 + " mb-4"}>Contract & Terms</h3>
             
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid gap-6 md:grid-cols-3">
               <div>
                 <label className={dashboardTheme.forms.label}>
                   Yearly Quantity
@@ -424,34 +507,41 @@ const PostRFQPlatform = () => {
               </div>
               <div>
                 <label className={dashboardTheme.forms.label}>
-                  MOQ Required
+                  Payment Terms
                 </label>
-                <input
-                  type="text"
-                  value={formData.moq_required}
-                  onChange={(e) => setFormData(prev => ({ ...prev, moq_required: e.target.value }))}
-                  placeholder="e.g., 1000 units"
-                  className={dashboardTheme.forms.input}
-                />
+                <select
+                  value={formData.payment_terms}
+                  onChange={(e) => setFormData(prev => ({ ...prev, payment_terms: e.target.value }))}
+                  className={dashboardTheme.forms.select}
+                >
+                  <option value="">Select terms...</option>
+                  <option value="Net 30">Net 30</option>
+                  <option value="Net 60">Net 60</option>
+                  <option value="Net 90">Net 90</option>
+                  <option value="COD">COD</option>
+                  <option value="Advance">Advance Payment</option>
+                </select>
               </div>
               <div>
                 <label className={dashboardTheme.forms.label}>
-                  Unit of Measure
+                  Contract Duration
                 </label>
                 <select
-                  value={formData.unit_of_measure}
-                  onChange={(e) => setFormData(prev => ({ ...prev, unit_of_measure: e.target.value }))}
+                  value={formData.contract_duration}
+                  onChange={(e) => setFormData(prev => ({ ...prev, contract_duration: e.target.value }))}
                   className={dashboardTheme.forms.select}
                 >
-                  <option value="">Select unit...</option>
-                  {unitOfMeasureOptions.map(unit => (
-                    <option key={unit} value={unit}>{unit}</option>
-                  ))}
+                  <option value="">Select duration...</option>
+                  <option value="Spot Buy">Spot Buy (One-time)</option>
+                  <option value="6 Months">6 Months</option>
+                  <option value="1 Year">1 Year</option>
+                  <option value="2 Years">2 Years</option>
+                  <option value="Long Term">Long Term Agreement</option>
                 </select>
               </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6 mt-4">
+            <div className="grid gap-6 mt-4 md:grid-cols-3">
               <div>
                 <label className={dashboardTheme.forms.label}>
                   Currency
@@ -464,21 +554,6 @@ const PostRFQPlatform = () => {
                   <option value="">Select currency...</option>
                   {currencyOptions.map(curr => (
                     <option key={curr} value={curr}>{curr}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className={dashboardTheme.forms.label}>
-                  Price Unit
-                </label>
-                <select
-                  value={formData.price_unit}
-                  onChange={(e) => setFormData(prev => ({ ...prev, price_unit: e.target.value }))}
-                  className={dashboardTheme.forms.select}
-                >
-                  <option value="">Select price unit...</option>
-                  {priceUnitOptions.map(pu => (
-                    <option key={pu} value={pu}>{pu}</option>
                   ))}
                 </select>
               </div>
@@ -497,14 +572,25 @@ const PostRFQPlatform = () => {
                   ))}
                 </select>
               </div>
+              <div className="flex items-end pb-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.alternative_parts_allowed}
+                    onChange={(e) => setFormData(prev => ({ ...prev, alternative_parts_allowed: e.target.checked }))}
+                    className={dashboardTheme.forms.checkbox}
+                  />
+                  <span className="text-sm font-medium text-secondary-700">Alternative Parts Allowed?</span>
+                </label>
+              </div>
             </div>
           </div>
 
           {/* Delivery Section */}
-          <div className="border-t border-secondary-200 pt-6">
+          <div className="pt-6 border-t border-secondary-200">
             <h3 className={dashboardTheme.typography.heading4 + " mb-4"}>Delivery Information</h3>
             
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid gap-6 md:grid-cols-2">
               <div>
                 <label className={dashboardTheme.forms.label}>
                   Delivery Plant
@@ -563,26 +649,11 @@ const PostRFQPlatform = () => {
                     type="checkbox"
                     checked={formData.required_certifications.includes(cert)}
                     onChange={() => toggleCertification(cert)}
-                    className={dashboardTheme.forms.checkbox}
+                    className="w-4 h-4 rounded text-primary-600 border-secondary-300 focus:ring-primary-500"
                   />
                   <span className="text-sm font-medium">{cert}</span>
                 </label>
               ))}
-            </div>
-          </div>
-
-          <div>
-            <label className={dashboardTheme.forms.label}>
-              Upload Supporting Documents
-            </label>
-            <div className="border-2 border-dashed border-secondary-200 rounded-xl p-8 text-center hover:border-primary-500 hover:bg-primary-50/30 transition-all cursor-pointer group">
-              <div className="w-16 h-16 bg-secondary-50 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary-100 transition-colors">
-                <Upload className="text-secondary-400 group-hover:text-primary-600 transition-colors" size={24} />
-              </div>
-              <p className="text-secondary-600 mb-2 font-medium">
-                <span className="text-primary-600">Click to upload</span> or drag and drop
-              </p>
-              <p className="text-sm text-secondary-400">Technical drawings, specifications, CAD files (PDF, DWG, STEP)</p>
             </div>
           </div>
 
@@ -599,12 +670,72 @@ const PostRFQPlatform = () => {
             ></textarea>
           </div>
 
-          <div className="bg-primary-50/50 border border-primary-100 rounded-xl p-4">
+          {/* Bidding Logic & Privacy */}
+          <div className="p-4 space-y-3 border bg-secondary-50 rounded-xl border-secondary-200">
+            <h4 className="mb-2 text-sm font-semibold tracking-wide uppercase text-secondary-900">Bidding Logic & Privacy</h4>
+            
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="flex items-center justify-between p-3 transition-all bg-white border rounded-lg cursor-pointer border-secondary-200 hover:border-primary-300">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-6 rounded-full p-1 transition-colors ${rfqSettings.is_sealed_bid ? 'bg-primary-600' : 'bg-secondary-300'}`}>
+                    <div className={`bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform ${rfqSettings.is_sealed_bid ? 'translate-x-4' : ''}`} />
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    className="hidden" 
+                    checked={rfqSettings.is_sealed_bid}
+                    onChange={() => setRfqSettings(prev => ({ ...prev, is_sealed_bid: !prev.is_sealed_bid }))}
+                  />
+                  <div>
+                    <div className="text-sm font-medium text-secondary-900">Sealed Bid</div>
+                    <div className="text-xs text-secondary-500">Target price is hidden from suppliers</div>
+                  </div>
+                </div>
+              </label>
+
+              <label className="flex items-center justify-between p-3 transition-all bg-white border rounded-lg cursor-pointer border-secondary-200 hover:border-primary-300">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-6 rounded-full p-1 transition-colors ${rfqSettings.requires_nda ? 'bg-primary-600' : 'bg-secondary-300'}`}>
+                    <div className={`bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform ${rfqSettings.requires_nda ? 'translate-x-4' : ''}`} />
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    className="hidden" 
+                    checked={rfqSettings.requires_nda}
+                    onChange={() => setRfqSettings(prev => ({ ...prev, requires_nda: !prev.requires_nda }))}
+                  />
+                  <div>
+                    <div className="flex items-center gap-2 text-sm font-medium text-secondary-900">
+                      NDA Required <span className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full">Secure</span>
+                    </div>
+                    <div className="text-xs text-secondary-500">Suppliers must sign NDA to view docs</div>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label className={dashboardTheme.forms.label}>
+              Upload Supporting Documents
+            </label>
+            <div className="p-8 text-center transition-all border-2 border-dashed cursor-pointer border-secondary-200 rounded-xl hover:border-primary-500 hover:bg-primary-50/30 group">
+              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 transition-colors rounded-full bg-secondary-50 group-hover:bg-primary-100">
+                <Upload className="transition-colors text-secondary-400 group-hover:text-primary-600" size={24} />
+              </div>
+              <p className="mb-2 font-medium text-secondary-600">
+                <span className="text-primary-600">Click to upload</span> or drag and drop
+              </p>
+              <p className="text-sm text-secondary-400">Technical drawings, specifications, CAD files (PDF, DWG, STEP)</p>
+            </div>
+          </div>
+
+          <div className="p-4 border bg-primary-50/50 border-primary-100 rounded-xl">
             <div className="flex items-start gap-3">
               <AlertCircle className="text-primary-600 mt-0.5" size={20} />
               <div className="text-sm">
-                <div className="font-semibold text-primary-900 mb-1">Your RFQ will be visible to:</div>
-                <ul className="text-primary-800 space-y-1">
+                <div className="mb-1 font-semibold text-primary-900">Your RFQ will be visible to:</div>
+                <ul className="space-y-1 text-primary-800">
                   <li>• All verified suppliers matching your requirements</li>
                   <li>• Suppliers will see your company name and basic contact info</li>
                   <li>• You'll receive quotes directly from interested suppliers</li>
@@ -634,98 +765,186 @@ const PostRFQPlatform = () => {
 
       {/* My Posted RFQs */}
       <div className={dashboardTheme.cards.primary + " " + dashboardTheme.cards.padding.large}>
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center justify-between mb-6">
           <h2 className={dashboardTheme.typography.heading3}>My Posted RFQs</h2>
-          <span className="text-sm font-medium text-secondary-500 bg-secondary-100 px-3 py-1 rounded-full">{myRFQs.length} total</span>
+          <span className="px-3 py-1 text-sm font-medium rounded-full text-secondary-500 bg-secondary-100">{myRFQs.length} total</span>
         </div>
 
         {loading ? (
-          <div className="text-center py-12 bg-white/50 backdrop-blur-sm border border-secondary-200 rounded-2xl">
+          <div className="py-12 text-center border bg-white/50 backdrop-blur-sm border-secondary-200 rounded-2xl">
             <div className={`${dashboardTheme.loading.spinner} h-12 w-12 border-4 border-t-primary-600 mx-auto`}></div>
             <p className="mt-4 text-secondary-500">Loading RFQs...</p>
           </div>
         ) : myRFQs.length === 0 ? (
-          <div className="text-center py-12 bg-white/50 backdrop-blur-sm border border-secondary-200 rounded-2xl">
+          <div className="py-12 text-center border bg-white/50 backdrop-blur-sm border-secondary-200 rounded-2xl">
             <FileText size={48} className="mx-auto mb-4 text-secondary-300" />
-            <p className="text-secondary-500 font-medium">No RFQs posted yet. Create your first RFQ above!</p>
+            <p className="font-medium text-secondary-500">No RFQs posted yet. Create your first RFQ above!</p>
           </div>
         ) : (
           <div className="space-y-4">
             {myRFQs.map(rfq => (
               <div key={rfq.id} className={`border rounded-xl p-6 hover:shadow-md transition-all ${rfq.status === 'active' ? 'border-green-200 bg-green-50/30' : 'border-secondary-200 bg-secondary-50/30'
                 }`}>
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex items-start justify-between mb-4">
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className={dashboardTheme.typography.heading4}>{rfq.title}</h3>
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(rfq.status)}`}>
-                        {rfq.status === 'active' ? '● Active' : rfq.status}
+                      <h3 className="font-semibold text-secondary-900">{rfq.title}</h3>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(rfq.status)}`}>
+                        {rfq.status.charAt(0).toUpperCase() + rfq.status.slice(1)}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-secondary-500 font-medium">
-                      {rfq.quantity && <span>Qty: {rfq.quantity}</span>}
-                      {rfq.target_price && (
-                        <>
-                          <span className="text-secondary-300">•</span>
-                          <span>Target: {rfq.target_price}</span>
-                        </>
-                      )}
-                      <span className="text-secondary-300">•</span>
-                      <span>Posted {formatTimeAgo(rfq.created_at)}</span>
+                    <div className="flex items-center gap-4 text-sm text-secondary-500">
+                      <span className="flex items-center gap-1"><Clock size={14} /> Posted {formatTimeAgo(rfq.created_at)}</span>
+                      <span className="flex items-center gap-1"><Eye size={14} /> {rfq.view_count} views</span>
+                      <span className="flex items-center gap-1"><MessageSquare size={14} /> {rfq.response_count} responses</span>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button className="p-2 text-secondary-400 hover:text-secondary-900 hover:bg-secondary-100 rounded-lg transition-colors">
-                      <Eye size={18} />
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedRFQ(rfq);
+                        setActiveView('view-responses');
+                      }}
+                      className="p-2 transition-colors rounded-lg text-primary-600 hover:bg-primary-50"
+                      title="View Responses"
+                    >
+                      <MessageSquare size={20} />
                     </button>
-                    {rfq.status === 'active' && (
-                      <>
-                        <button className="p-2 text-primary-600 hover:text-primary-800 hover:bg-primary-50 rounded-lg transition-colors">
-                          <Edit size={18} />
-                        </button>
-                        <button className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors">
-                          <Trash2 size={18} />
-                        </button>
-                      </>
-                    )}
+                    <button className="p-2 transition-colors rounded-lg text-secondary-400 hover:text-secondary-600 hover:bg-secondary-100">
+                      <Edit size={20} />
+                    </button>
+                    <button className="p-2 text-red-400 transition-colors rounded-lg hover:text-red-600 hover:bg-red-50">
+                      <Trash2 size={20} />
+                    </button>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-3 gap-4 mt-6">
-                  <div className="bg-white p-4 rounded-xl border border-secondary-100 shadow-sm">
-                    <div className="text-2xl font-bold text-primary-600">{rfq.response_count}</div>
-                    <div className="text-xs text-secondary-500 font-medium uppercase tracking-wider mt-1">Responses Received</div>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-secondary-100 shadow-sm">
-                    <div className="text-2xl font-bold text-purple-600">{rfq.view_count}</div>
-                    <div className="text-xs text-secondary-500 font-medium uppercase tracking-wider mt-1">Supplier Views</div>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-secondary-100 shadow-sm">
-                    <div className={`text-lg font-bold ${rfq.status === 'active' ? 'text-green-600' : 'text-secondary-500'
-                      }`}>
-                      {rfq.expires_at || 'Open'}
-                    </div>
-                    <div className="text-xs text-secondary-500 font-medium uppercase tracking-wider mt-1">Deadline</div>
-                  </div>
-                </div>
-
-                {rfq.status === 'active' && rfq.response_count > 0 && (
-                  <button
-                    onClick={() => {
-                      setSelectedRFQ(rfq);
-                      setActiveView('view-responses');
-                      loadRFQResponses(rfq.id);
-                    }}
-                    className={dashboardTheme.buttons.primary + " w-full mt-6 justify-center"}
-                  >
-                    View {rfq.response_count} Responses →
-                  </button>
-                )}
               </div>
             ))}
           </div>
         )}
       </div>
+    </div>
+  );
+
+  const renderQABoard = () => (
+    <div className="space-y-6">
+      <div className="flex items-start gap-3 p-4 border border-blue-100 bg-blue-50 rounded-xl">
+        <AlertCircle className="text-blue-600 mt-0.5" size={20} />
+        <div>
+          <h4 className="text-sm font-semibold text-blue-900">Public Q&A Board</h4>
+          <p className="mt-1 text-sm text-blue-700">Questions asked here are visible to all participating suppliers. Use this to clarify requirements without repeating yourself.</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {qaMessages.map((msg) => (
+          <div key={msg.id} className={`p-4 rounded-xl border ${msg.type === 'question' ? 'bg-white border-secondary-200' : 'bg-primary-50 border-primary-100 ml-8'}`}>
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-secondary-900">{msg.user}</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-bold ${msg.type === 'question' ? 'bg-secondary-100 text-secondary-600' : 'bg-primary-100 text-primary-700'}`}>
+                  {msg.type}
+                </span>
+              </div>
+              <span className="text-xs text-secondary-400">{msg.timestamp}</span>
+            </div>
+            <p className="text-sm text-secondary-700">{msg.message}</p>
+            {msg.type === 'question' && (
+              <button className="mt-3 text-xs font-semibold text-primary-600 hover:underline">Reply Publicly</button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="p-4 mt-6 border bg-secondary-50 rounded-xl border-secondary-200">
+        <h4 className="mb-2 text-sm font-medium text-secondary-900">Post a Public Clarification</h4>
+        <textarea 
+          className={dashboardTheme.forms.textarea + " bg-white mb-3"} 
+          rows={3}
+          placeholder="Type a message to all suppliers..."
+        ></textarea>
+        <div className="flex justify-end">
+          <button className={dashboardTheme.buttons.primary + " px-4 py-2 text-sm"}>Post Message</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderComparisonTable = () => (
+    <div className="overflow-x-auto bg-white border shadow-sm border-secondary-200 rounded-xl">
+      <table className="w-full text-sm text-left">
+        <thead className="text-xs font-semibold uppercase bg-secondary-50 text-secondary-600">
+          <tr>
+            <th className="sticky left-0 z-10 px-6 py-4 border-r bg-secondary-50">Metric</th>
+            {rfqResponses.map(r => (
+              <th key={r.id} className="px-6 py-4 min-w-[200px]">
+                {r.supplier_company_name}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-secondary-100">
+          <tr className="bg-white">
+            <td className="sticky left-0 px-6 py-4 font-medium bg-white border-r text-secondary-900">Price Quote</td>
+            {rfqResponses.map(r => (
+               <td key={r.id} className={`px-6 py-4 font-bold ${
+                  // Simple logic to highlight if it's the lowest (assuming string comparison for now, ideally parse float)
+                  'text-secondary-900'
+               }`}>
+                 {r.price_quote || '-'}
+               </td>
+            ))}
+          </tr>
+          <tr className="bg-white">
+            <td className="sticky left-0 px-6 py-4 font-medium bg-white border-r text-secondary-900">Lead Time</td>
+            {rfqResponses.map(r => (
+               <td key={r.id} className="px-6 py-4">
+                 {r.lead_time_days ? `${r.lead_time_days} days` : '-'}
+               </td>
+            ))}
+          </tr>
+          <tr className="bg-white">
+            <td className="sticky left-0 px-6 py-4 font-medium bg-white border-r text-secondary-900">MOQ</td>
+            {rfqResponses.map(r => (
+               <td key={r.id} className="px-6 py-4">
+                 {r.minimum_order_quantity || 'Flexible'}
+               </td>
+            ))}
+          </tr>
+          <tr className="bg-white">
+            <td className="sticky left-0 px-6 py-4 font-medium bg-white border-r text-secondary-900">Certifications</td>
+            {rfqResponses.map(r => (
+               <td key={r.id} className="px-6 py-4">
+                 <div className="flex flex-wrap gap-1">
+                   {r.certifications_provided ? r.certifications_provided.split(',').map((c, i) => (
+                     <span key={i} className="text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded border border-green-100">{c.trim()}</span>
+                   )) : '-'}
+                 </div>
+               </td>
+            ))}
+          </tr>
+          <tr className="bg-white">
+            <td className="sticky left-0 px-6 py-4 font-medium bg-white border-r text-secondary-900">Status</td>
+            {rfqResponses.map(r => (
+               <td key={r.id} className="px-6 py-4">
+                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                   r.status === 'accepted' ? 'bg-green-100 text-green-800' : 'bg-secondary-100 text-secondary-600'
+                 }`}>
+                   {r.status.replace('_', ' ')}
+                 </span>
+               </td>
+            ))}
+          </tr>
+          <tr className="bg-white">
+            <td className="sticky left-0 px-6 py-4 font-medium bg-white border-r text-secondary-900">Action</td>
+            {rfqResponses.map(r => (
+               <td key={r.id} className="px-6 py-4">
+                 <button className="text-xs font-medium text-primary-600 hover:text-primary-800">View Details</button>
+               </td>
+            ))}
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 
@@ -735,16 +954,16 @@ const PostRFQPlatform = () => {
       <div className={dashboardTheme.cards.primary + " " + dashboardTheme.cards.padding.large}>
         <button
           onClick={() => setActiveView('post-rfq')}
-          className="text-primary-600 hover:text-primary-700 mb-6 flex items-center gap-2 font-medium transition-colors"
+          className="flex items-center gap-2 mb-6 font-medium transition-colors text-primary-600 hover:text-primary-700"
         >
           ← Back to My RFQs
         </button>
         {selectedRFQ && (
           <>
-            <div className="flex justify-between items-start">
+            <div className="flex items-start justify-between">
               <div>
                 <h1 className={dashboardTheme.typography.heading2 + " mb-2"}>{selectedRFQ.title}</h1>
-                <div className="flex items-center gap-4 text-secondary-500 font-medium">
+                <div className="flex items-center gap-4 font-medium text-secondary-500">
                   {selectedRFQ.quantity && <span>Quantity: {selectedRFQ.quantity}</span>}
                   {selectedRFQ.target_price && (
                     <>
@@ -756,28 +975,28 @@ const PostRFQPlatform = () => {
                   <span>Posted {formatTimeAgo(selectedRFQ.created_at)}</span>
                 </div>
               </div>
-              <div className="text-right bg-primary-50 px-6 py-3 rounded-xl border border-primary-100">
+              <div className="px-6 py-3 text-right border bg-primary-50 rounded-xl border-primary-100">
                 <div className="text-3xl font-bold text-primary-600">{rfqResponses.length}</div>
-                <div className="text-sm text-secondary-600 font-medium">Supplier Responses</div>
+                <div className="text-sm font-medium text-secondary-600">Supplier Responses</div>
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-6 mt-8 pt-8 border-t border-secondary-100">
+            <div className="grid grid-cols-4 gap-6 pt-8 mt-8 border-t border-secondary-100">
               <div className="text-center">
                 <div className="text-2xl font-bold text-secondary-900">{selectedRFQ.view_count}</div>
-                <div className="text-sm text-secondary-500 font-medium mt-1">Total Views</div>
+                <div className="mt-1 text-sm font-medium text-secondary-500">Total Views</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">{selectedRFQ.response_count}</div>
-                <div className="text-sm text-secondary-500 font-medium mt-1">Responses</div>
+                <div className="mt-1 text-sm font-medium text-secondary-500">Responses</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600">{rfqResponses.filter(r => r.price_quote).length}</div>
-                <div className="text-sm text-secondary-500 font-medium mt-1">Quotes Received</div>
+                <div className="mt-1 text-sm font-medium text-secondary-500">Quotes Received</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary-600">{selectedRFQ.expires_at || 'Open'}</div>
-                <div className="text-sm text-secondary-500 font-medium mt-1">Deadline</div>
+                <div className="mt-1 text-sm font-medium text-secondary-500">Deadline</div>
               </div>
             </div>
           </>
@@ -786,44 +1005,64 @@ const PostRFQPlatform = () => {
 
       {/* Responses */}
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <h2 className={dashboardTheme.typography.heading3}>Supplier Responses</h2>
-          <select className={dashboardTheme.forms.select + " w-auto"}>
-            <option>Sort by: Most Recent</option>
-            <option>Sort by: Lowest Price</option>
-            <option>Sort by: Highest Rating</option>
-            <option>Sort by: Fastest Response</option>
-          </select>
+          <div className="flex gap-3">
+            <div className="flex p-1 bg-white border rounded-lg border-secondary-200">
+              <button 
+                onClick={() => setResponseViewMode('cards')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${responseViewMode === 'cards' ? 'bg-primary-50 text-primary-700' : 'text-secondary-500 hover:text-secondary-900'}`}
+              >
+                Cards
+              </button>
+              <button 
+                onClick={() => setResponseViewMode('table')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${responseViewMode === 'table' ? 'bg-primary-50 text-primary-700' : 'text-secondary-500 hover:text-secondary-900'}`}
+              >
+                Compare Table
+              </button>
+            </div>
+            <select className={dashboardTheme.forms.select + " w-auto"}>
+              <option>Sort by: Most Recent</option>
+              <option>Sort by: Lowest Price</option>
+              <option>Sort by: Highest Rating</option>
+              <option>Sort by: Fastest Response</option>
+            </select>
+          </div>
         </div>
 
         {loading ? (
-          <div className="text-center py-12 bg-white/50 backdrop-blur-sm border border-secondary-200 rounded-2xl">
+          <div className="py-12 text-center border bg-white/50 backdrop-blur-sm border-secondary-200 rounded-2xl">
             <div className={`${dashboardTheme.loading.spinner} h-12 w-12 border-4 border-t-primary-600 mx-auto`}></div>
             <p className="mt-4 text-secondary-500">Loading responses...</p>
           </div>
         ) : rfqResponses.length === 0 ? (
-          <div className="text-center py-12 bg-white/50 backdrop-blur-sm border border-secondary-200 rounded-2xl">
+          <div className="py-12 text-center border bg-white/50 backdrop-blur-sm border-secondary-200 rounded-2xl">
             <MessageSquare size={48} className="mx-auto mb-4 text-secondary-300" />
-            <p className="text-secondary-500 font-medium">No responses yet. Suppliers will respond soon!</p>
+            <p className="font-medium text-secondary-500">No responses yet. Suppliers will respond soon!</p>
           </div>
+        ) : responseViewMode === 'table' ? (
+          renderComparisonTable()
+        ) : responseViewMode === 'qa' ? (
+          renderQABoard()
         ) : (
           rfqResponses.map(response => (
             <div key={response.id} className={dashboardTheme.cards.primary + " " + dashboardTheme.cards.padding.medium + " " + dashboardTheme.cards.hover}>
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex items-start justify-between mb-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-primary-500/20">
+                  <div className="flex items-center justify-center w-16 h-16 text-xl font-bold text-white shadow-lg bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl shadow-primary-500/20">
                     {response.supplier_company_name.split(' ').map(w => w[0]).join('')}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className={dashboardTheme.typography.heading4}>{response.supplier_company_name}</h3>
-                      <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-100 rounded text-xs font-semibold text-blue-600">
+                      <div className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-blue-600 border border-blue-100 rounded bg-blue-50">
                         <Linkedin size={14} />
                         Verified
                       </div>
                     </div>
                     <div className="flex items-center gap-3 mt-1">
-                      <span className="text-secondary-500 text-sm">Responded {formatTimeAgo(response.responded_at)}</span>
+                      <span className="text-sm text-secondary-500">Responded {formatTimeAgo(response.responded_at)}</span>
                     </div>
                   </div>
                 </div>
@@ -837,34 +1076,34 @@ const PostRFQPlatform = () => {
 
               {/* Quote Details */}
               {response.price_quote && (
-                <div className="bg-gradient-to-br from-primary-50/50 to-indigo-50/30 rounded-xl p-6 mb-6 border border-primary-100/50">
+                <div className="p-6 mb-6 border bg-gradient-to-br from-primary-50/50 to-indigo-50/30 rounded-xl border-primary-100/50">
                   <div className="grid grid-cols-4 gap-6">
                     <div>
-                      <div className="text-xs text-secondary-500 mb-1 font-medium uppercase tracking-wider">Price per Unit</div>
+                      <div className="mb-1 text-xs font-medium tracking-wider uppercase text-secondary-500">Price per Unit</div>
                       <div className="text-2xl font-bold text-primary-600">{response.price_quote}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-secondary-500 mb-1 font-medium uppercase tracking-wider">Lead Time</div>
+                      <div className="mb-1 text-xs font-medium tracking-wider uppercase text-secondary-500">Lead Time</div>
                       <div className="text-lg font-semibold text-secondary-900">
                         {response.lead_time_days ? `${response.lead_time_days} days` : 'TBD'}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-secondary-500 mb-1 font-medium uppercase tracking-wider">Min Order Qty</div>
+                      <div className="mb-1 text-xs font-medium tracking-wider uppercase text-secondary-500">Min Order Qty</div>
                       <div className="text-lg font-semibold text-secondary-900">
                         {response.minimum_order_quantity || 'Flexible'}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-secondary-500 mb-1 font-medium uppercase tracking-wider">Certifications</div>
-                      <div className="flex gap-1 flex-wrap">
+                      <div className="mb-1 text-xs font-medium tracking-wider uppercase text-secondary-500">Certifications</div>
+                      <div className="flex flex-wrap gap-1">
                         {response.certifications_provided ?
                           response.certifications_provided.split(',').map((cert, idx) => (
                             <span key={idx} className={dashboardTheme.badges.success}>
                               {cert.trim()}
                             </span>
                           )) :
-                          <span className="text-xs text-secondary-400 italic">None specified</span>
+                          <span className="text-xs italic text-secondary-400">None specified</span>
                         }
                       </div>
                     </div>
@@ -874,9 +1113,9 @@ const PostRFQPlatform = () => {
 
               {/* Message */}
               {response.message && (
-                <div className="bg-secondary-50/50 border border-secondary-100 rounded-xl p-4 mb-6">
-                  <div className="text-sm font-semibold text-secondary-900 mb-2">Message from Supplier:</div>
-                  <p className="text-secondary-600 leading-relaxed">{response.message}</p>
+                <div className="p-4 mb-6 border bg-secondary-50/50 border-secondary-100 rounded-xl">
+                  <div className="mb-2 text-sm font-semibold text-secondary-900">Message from Supplier:</div>
+                  <p className="leading-relaxed text-secondary-600">{response.message}</p>
                 </div>
               )}
 
@@ -909,7 +1148,7 @@ const PostRFQPlatform = () => {
   );
 
   return (
-    <div className="min-h-screen bg-secondary-50 relative overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden bg-secondary-50">
       {/* Decorative background elements */}
       <div className={dashboardTheme.decorativeBackground.container}>
         <div
@@ -938,7 +1177,7 @@ const PostRFQPlatform = () => {
 
             {/* Center Navigation Menu - Fixed Width */}
             <div className={dashboardTheme.navigation.navButtonsContainer}>
-              <div className="hidden md:flex gap-2">
+              <div className="hidden gap-2 md:flex">
                 <a
                   href="/dashboard/buyer"
                   className={dashboardTheme.navigation.navButton}
@@ -982,7 +1221,7 @@ const PostRFQPlatform = () => {
                   className={dashboardTheme.navigation.accountButton}
                 >
                   <User size={20} />
-                  <span className="hidden md:inline font-medium">Account</span>
+                  <span className="hidden font-medium md:inline">Account</span>
                   <ChevronDown size={16} />
                 </button>
 

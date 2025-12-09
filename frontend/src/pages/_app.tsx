@@ -1,9 +1,14 @@
 import '../styles/globals.css'
 import type { AppProps } from 'next/app'
+import Head from 'next/head'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { Toaster } from 'react-hot-toast'
 import { useState } from 'react'
+import { Inter, Outfit } from 'next/font/google'
 import CookieConsent from '../components/CookieConsent'
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' })
 
 function MyApp({ Component, pageProps }: AppProps) {
   const [queryClient] = useState(() => new QueryClient({
@@ -18,7 +23,18 @@ function MyApp({ Component, pageProps }: AppProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Component {...pageProps} />
+      <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Sourcing Supply Chain Net</title>
+        <meta name="description" content="B2B supply chain sourcing platform with LinkedIn integration" />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="en_IE" />
+        <meta property="og:url" content="https://www.sourcingsupplychain.net/" />
+        <meta property="og:site_name" content="Sourcing Supply Chain Net" />
+      </Head>
+      <main className={`${inter.variable} ${outfit.variable} font-sans`}>
+        <Component {...pageProps} />
+      </main>
       <Toaster
         position="top-right"
         toastOptions={{
