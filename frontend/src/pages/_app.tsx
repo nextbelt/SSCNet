@@ -25,12 +25,24 @@ function MyApp({ Component, pageProps }: AppProps) {
     <QueryClientProvider client={queryClient}>
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Sourcing Supply Chain Net</title>
-        <meta name="description" content="B2B supply chain sourcing platform with LinkedIn integration" />
+        <title>LinkedProcurement - B2B Supply Chain Sourcing Platform</title>
+        <meta name="description" content="Connect with verified suppliers and streamline your procurement process. B2B supply chain sourcing platform with LinkedIn integration." />
+        
+        {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
-        <meta property="og:locale" content="en_IE" />
-        <meta property="og:url" content="https://www.sourcingsupplychain.net/" />
-        <meta property="og:site_name" content="Sourcing Supply Chain Net" />
+        <meta property="og:url" content="https://linkedprocurement.com/" />
+        <meta property="og:title" content="LinkedProcurement - B2B Supply Chain Sourcing Platform" />
+        <meta property="og:description" content="Connect with verified suppliers and streamline your procurement process. B2B supply chain sourcing platform with LinkedIn integration." />
+        <meta property="og:image" content="https://linkedprocurement.com/og-image.png" />
+        <meta property="og:site_name" content="LinkedProcurement" />
+        <meta property="og:locale" content="en_US" />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content="https://linkedprocurement.com/" />
+        <meta name="twitter:title" content="LinkedProcurement - B2B Supply Chain Sourcing Platform" />
+        <meta name="twitter:description" content="Connect with verified suppliers and streamline your procurement process. B2B supply chain sourcing platform with LinkedIn integration." />
+        <meta name="twitter:image" content="https://linkedprocurement.com/og-image.png" />
       </Head>
       <main className={`${inter.variable} ${outfit.variable} font-sans`}>
         <Component {...pageProps} />
