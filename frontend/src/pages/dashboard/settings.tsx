@@ -179,28 +179,55 @@ export default function AccountSettings() {
     if (!selectedFile) return null;
 
     setUploading(true);
-    const formData = new FormData();
-    formData.append('file', selectedFile);
 
     try {
       const { session } = await getSession();
       if (!session) throw new Error('No session');
       
-      const token = session.access_token;
-      const response = await axios.post(
-        `${API_URL}/api/v1/auth/upload-profile-picture`,
-        formData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
-      return response.data.profile_picture_url;
+      const userId = session.user.id;
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${userId}/avatar.${fileExt}`;
+      
+      // Upload to Supabase Storage
+      const { data, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, selectedFile, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) {
+        // If bucket doesn't exist or other error, store as base64 in profile
+        console.warn('Supabase Storage upload failed, using base64:', uploadError);
+        
+        // Convert to base64 and store directly in profile
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve(reader.result as string);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(selectedFile);
+        });
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      return urlData.publicUrl;
     } catch (err: any) {
       console.error('Failed to upload image:', err);
-      throw new Error('Failed to upload profile picture');
+      // Fallback: store as base64
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve(reader.result as string);
+        };
+        reader.onerror = () => reject(new Error('Failed to process image'));
+        reader.readAsDataURL(selectedFile);
+      });
     } finally {
       setUploading(false);
     }
